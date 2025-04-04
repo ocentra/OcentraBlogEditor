@@ -1,6 +1,77 @@
 import React, { useState } from 'react';
 import { NodeViewProps } from '@tiptap/core';
 
+const styles = {
+  codeBlock: {
+    background: '#1e1e1e',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    margin: '1em 0',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  },
+  codeBlockHeader: {
+    background: '#2d2d2d',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    padding: '8px 12px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  codeBlockControls: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  languageSelect: {
+    background: 'rgba(0, 0, 0, 0.3)',
+    color: 'white',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '4px',
+    padding: '4px 8px',
+    fontSize: '12px',
+    marginRight: '8px',
+    minWidth: '120px',
+  },
+  codeBlockActions: {
+    display: 'flex',
+    gap: '8px',
+  },
+  actionButton: {
+    background: 'transparent',
+    border: 'none',
+    color: 'white',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    opacity: 0.7,
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    '&:hover': {
+      opacity: 1,
+      background: 'rgba(255, 255, 255, 0.1)',
+    },
+  },
+  codeBlockContent: {
+    margin: 0,
+    padding: '16px',
+    background: 'transparent',
+    color: 'white',
+    fontFamily: "'Fira Code', monospace",
+    fontSize: '14px',
+    lineHeight: 1.5,
+    whiteSpace: 'pre-wrap',
+    overflowX: 'auto' as const,
+  },
+  codeBlockContentEditing: {
+    outline: '1px solid rgba(255, 255, 255, 0.2)',
+    background: 'rgba(255, 255, 255, 0.05)',
+  },
+};
+
 const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -17,13 +88,13 @@ const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) 
   };
 
   return (
-    <div className="code-block">
-      <div className="code-block-header">
-        <div className="code-block-controls">
+    <div style={styles.codeBlock}>
+      <div style={styles.codeBlockHeader}>
+        <div style={styles.codeBlockControls}>
           <select
             value={(node.attrs as any).language || 'auto'}
             onChange={e => updateAttributes({ language: e.target.value })}
-            className="language-select"
+            style={styles.languageSelect}
           >
             <option value="auto">Auto Detect</option>
             <option value="javascript">JavaScript</option>
@@ -36,24 +107,24 @@ const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) 
             <option value="sql">SQL</option>
             {/* Add more language options as needed */}
           </select>
-          <div className="code-block-actions">
+          <div style={styles.codeBlockActions}>
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className="action-button"
+              style={styles.actionButton}
               title={isEditing ? "Save" : "Edit"}
             >
               ✏️
             </button>
             <button 
               onClick={handleCopy}
-              className="action-button"
+              style={styles.actionButton}
               title="Copy"
             >
               📋
             </button>
             <button 
               onClick={handleDelete}
-              className="action-button"
+              style={styles.actionButton}
               title="Delete"
             >
               🗑️
@@ -62,7 +133,10 @@ const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) 
         </div>
       </div>
       <pre 
-        className={`code-block-content ${isEditing ? 'editing' : ''}`}
+        style={{
+          ...styles.codeBlockContent,
+          ...(isEditing ? styles.codeBlockContentEditing : {})
+        }}
         contentEditable={isEditing}
         suppressContentEditableWarning
         spellCheck={false}

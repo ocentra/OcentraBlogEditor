@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import './HeroImage.css';
 import { useConfig } from '../context/ConfigContext';
 import { icons as defaultIcons } from '../assets';
 
@@ -7,7 +6,8 @@ interface HeroImageProps {
   imageUrl: string;
   alt: string;
   position?: { x: number; y: number };
-  onImageChange: (url: string, alt: string, position?: { x: number; y: number }) => void;
+  zoom?: number;
+  onImageChange: (url: string, alt: string, position?: { x: number; y: number }, zoom?: number) => void;
   onAltChange: (alt: string) => void;
   isActive: boolean;
   onSelect: () => void;
@@ -18,6 +18,7 @@ const HeroImage: React.FC<HeroImageProps> = ({
   imageUrl,
   alt,
   position = { x: 50, y: 50 },
+  zoom = 100,
   onImageChange,
   onAltChange,
   isActive,
@@ -30,10 +31,15 @@ const HeroImage: React.FC<HeroImageProps> = ({
   const [isEditingAlt, setIsEditingAlt] = useState(false);
   const [tempAlt, setTempAlt] = useState(alt);
   const [imagePosition, setImagePosition] = useState(position);
+  const [imageZoom, setImageZoom] = useState(zoom);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [startPosition, setStartPosition] = useState(position);
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomStart, setZoomStart] = useState(0);
   const imageWrapperRef = useRef<HTMLDivElement>(null);
+  const [imageError, setImageError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
 
   useEffect(() => {
     setTempAlt(alt);
@@ -43,6 +49,26 @@ const HeroImage: React.FC<HeroImageProps> = ({
     setImagePosition(position);
     setStartPosition(position);
   }, [position]);
+
+  useEffect(() => {
+    if (imageUrl) {
+      setIsImageLoading(true);
+      setImageError(false);
+      const img = new Image();
+      img.onload = () => {
+        setIsImageLoading(false);
+        setImageError(false);
+      };
+      img.onerror = () => {
+        setIsImageLoading(false);
+        setImageError(true);
+      };
+      img.src = imageUrl;
+    } else {
+      setIsImageLoading(false);
+      setImageError(false);
+    }
+  }, [imageUrl]);
 
   const calculateNewPosition = (clientX: number, clientY: number): { x: number, y: number } => {
     if (!imageWrapperRef.current) return imagePosition;
@@ -75,8 +101,8 @@ const HeroImage: React.FC<HeroImageProps> = ({
   const handleMouseUp = useCallback(() => {
     if (!isDragging || readOnly) return;
     setIsDragging(false);
-    onImageChange(imageUrl, tempAlt, imagePosition);
-  }, [isDragging, readOnly, imageUrl, tempAlt, imagePosition, onImageChange]);
+    onImageChange(imageUrl, tempAlt, imagePosition, imageZoom);
+  }, [isDragging, readOnly, imageUrl, tempAlt, imagePosition, imageZoom, onImageChange]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!imageUrl || readOnly || isEditingAlt || e.touches.length !== 1) return;
@@ -95,8 +121,8 @@ const HeroImage: React.FC<HeroImageProps> = ({
   const handleTouchEnd = useCallback(() => {
     if (!isDragging || readOnly) return;
     setIsDragging(false);
-    onImageChange(imageUrl, tempAlt, imagePosition);
-  }, [isDragging, readOnly, imageUrl, tempAlt, imagePosition, onImageChange]);
+    onImageChange(imageUrl, tempAlt, imagePosition, imageZoom);
+  }, [isDragging, readOnly, imageUrl, tempAlt, imagePosition, imageZoom, onImageChange]);
 
   useEffect(() => {
     if (isDragging) {
@@ -128,7 +154,7 @@ const HeroImage: React.FC<HeroImageProps> = ({
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          onImageChange(event.target.result as string, file.name, { x: 50, y: 50 });
+          onImageChange(event.target.result as string, file.name, { x: 50, y: 50 }, imageZoom);
           setTempAlt(file.name);
         }
       };
@@ -144,8 +170,10 @@ const HeroImage: React.FC<HeroImageProps> = ({
     setTempAlt(alt);
   };
 
-  const handleSaveAltClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleSaveAltClick = (e: React.MouseEvent | null) => {
+    if (e) {
+      e.stopPropagation();
+    }
     if (readOnly) return;
     onAltChange(tempAlt);
     setIsEditingAlt(false);
@@ -178,113 +206,322 @@ const HeroImage: React.FC<HeroImageProps> = ({
       e.preventDefault();
       const newPos = { x: newX, y: newY };
       setImagePosition(newPos);
-      onImageChange(imageUrl, tempAlt, newPos);
+      onImageChange(imageUrl, tempAlt, newPos, imageZoom);
     }
   };
 
-  const showToolbar = (isActive || isHovered) && !readOnly && !isEditingAlt;
-  const showPlaceholder = !imageUrl && !readOnly;
+  const handleZoom = (delta: number) => {
+    const newZoom = Math.max(50, Math.min(200, imageZoom + delta));
+    setImageZoom(newZoom);
+    onImageChange(imageUrl, tempAlt, imagePosition, newZoom);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!imageUrl || readOnly || isEditingAlt) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -5 : 5;
+    handleZoom(delta);
+  };
+
+  const handleZoomStart = (e: React.MouseEvent) => {
+    if (!imageUrl || readOnly || isEditingAlt) return;
+    e.preventDefault();
+    setIsZooming(true);
+    setZoomStart(e.clientY);
+  };
+
+  const handleZoomMove = (e: MouseEvent) => {
+    if (!isZooming || readOnly) return;
+    const delta = (e.clientY - zoomStart) / 10;
+    handleZoom(-delta);
+    setZoomStart(e.clientY);
+  };
+
+  const handleZoomEnd = () => {
+    setIsZooming(false);
+  };
+
+  useEffect(() => {
+    if (isZooming) {
+      document.addEventListener('mousemove', handleZoomMove);
+      document.addEventListener('mouseup', handleZoomEnd);
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleZoomMove);
+      document.removeEventListener('mouseup', handleZoomEnd);
+    };
+  }, [isZooming]);
+
+  const hasValidImage = imageUrl && !imageError && !isImageLoading;
+
+  const showToolbar = (isActive || isHovered) && !readOnly && !isEditingAlt && hasValidImage;
+  const showPlaceholder = !hasValidImage && !readOnly;
+
+  const styles = {
+    container: {
+      position: 'relative' as const,
+      width: '100%',
+      height: '400px',
+      backgroundColor: 'transparent',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      marginBottom: '16px',
+      border: isActive ? '2px solid #007bff' : '1px solid rgba(255, 255, 255, 0.1)',
+    },
+    wrapper: {
+      position: 'relative' as const,
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'transparent',
+    },
+    zoomContainer: {
+      width: '100%',
+      height: '100%',
+      overflow: 'hidden',
+      transition: 'transform 0.2s ease',
+      backgroundColor: 'transparent',
+    },
+    image: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover' as const,
+      transition: 'object-position 0.2s ease',
+      backgroundColor: 'transparent',
+    },
+    toolbar: {
+      position: 'absolute' as const,
+      bottom: '16px',
+      left: '16px',
+      right: '16px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      background: 'rgba(0, 0, 0, 0.7)',
+      padding: '8px',
+      borderRadius: '4px',
+      opacity: isHovered ? 1 : 0,
+      transition: 'opacity 0.2s ease',
+    },
+    zoomControls: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+    },
+    zoomButton: {
+      background: 'transparent',
+      border: '1px solid rgba(255, 255, 255, 0.3)',
+      color: 'white',
+      width: '24px',
+      height: '24px',
+      borderRadius: '4px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      fontSize: '16px',
+      transition: 'all 0.2s ease',
+    },
+    zoomButtonHover: {
+      background: 'rgba(255, 255, 255, 0.1)',
+      borderColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    zoomButtonDisabled: {
+      opacity: 0.5,
+      cursor: 'not-allowed',
+    },
+    zoomValue: {
+      color: 'white',
+      fontSize: '14px',
+      minWidth: '40px',
+      textAlign: 'center' as const,
+    },
+    placeholder: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: '100%',
+      backgroundColor: 'rgba(2, 6, 23, 0.1)',
+      border: '2px dashed rgba(255, 255, 255, 0.1)',
+      borderRadius: '8px',
+    },
+    placeholderContent: {
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'center',
+      gap: '12px',
+    },
+    placeholderIcon: {
+      width: '48px',
+      height: '48px',
+      opacity: 0.7,
+    },
+    placeholderSubtitle: {
+      color: 'rgba(255, 255, 255, 0.7)',
+      fontSize: '14px',
+      marginTop: '8px',
+    },
+    addButton: {
+      padding: '10px 20px',
+      backgroundColor: '#007bff',
+      color: 'white',
+      border: 'none',
+      borderRadius: '4px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      transition: 'background-color 0.2s ease',
+    },
+    addButtonHover: {
+      backgroundColor: '#0056b3',
+    },
+    altEdit: {
+      position: 'absolute' as const,
+      bottom: '-40px',
+      left: 0,
+      right: 0,
+      padding: '8px',
+      background: 'white',
+      border: '1px solid #ccc',
+      borderRadius: '4px',
+      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    },
+    altInput: {
+      width: '100%',
+      padding: '4px 8px',
+      border: '1px solid #ccc',
+      borderRadius: '4px',
+      fontSize: '14px',
+    },
+    altInputFocus: {
+      outline: 'none',
+      borderColor: '#007bff',
+    },
+  };
 
   return (
-    <div
-      className={`hero-image-container ${isActive ? 'hero-image-active' : ''} ${readOnly ? 'hero-image-readonly' : ''}`}
-      onClick={readOnly ? undefined : onSelect}
-      onMouseEnter={() => !readOnly && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      tabIndex={readOnly ? -1 : 0}
-      onFocus={readOnly ? undefined : onSelect}
+    <div 
+      style={styles.container}
+      onClick={onSelect}
       onKeyDown={handleKeyDown}
-      aria-label={alt || "Hero image container"}
+      tabIndex={0}
     >
-      {showToolbar && (
-        <div className={`hero-image-toolbar ${showToolbar ? 'hero-image-toolbar-visible' : ''}`}>
-          {imageUrl && (
-            <>
-              <button
-                onClick={handleReplaceClick}
-                className="hero-image-toolbar-button hero-image-replace-button"
-                title="Replace cover image"
-                disabled={readOnly}
-              >
-                <img src={icons.camera} alt="" className="hero-image-icon" /> Replace
-              </button>
-              <button
-                onClick={handleEditAltClick}
-                className="hero-image-toolbar-button"
-                title="Edit image description (alt text)"
-                disabled={readOnly}
-              >
-                ✏️ Alt
-              </button>
-              <span className="hero-image-toolbar-button drag-hint" title="Drag or use arrow keys to reposition">
-                ✥ Reposition
-              </span>
-            </>
-          )}
-        </div>
-      )}
-      {isEditingAlt ? (
-        <div className="hero-image-edit-form" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="text"
-            value={tempAlt}
-            onChange={(e) => setTempAlt(e.target.value)}
-            placeholder="Image description (alt text)..."
-            className="hero-image-alt-input"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleSaveAltClick(e as any);
-              if (e.key === 'Escape') handleCancelAltClick(e as any);
-            }}
-          />
-          <div className="hero-image-edit-actions">
-            <button onClick={handleSaveAltClick} className="hero-image-save-button">Save</button>
-            <button onClick={handleCancelAltClick} className="hero-image-cancel-button">Cancel</button>
-          </div>
-        </div>
-      ) : (
-        <div
-          ref={imageWrapperRef}
-          className="hero-image-wrapper"
-          onClick={readOnly ? undefined : handleReplaceClick}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          style={{ cursor: readOnly ? 'default' : (isDragging ? 'grabbing' : (imageUrl ? 'grab' : 'pointer')) }}
-          tabIndex={-1}
-        >
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={alt}
-              className="hero-image"
-              style={{ objectPosition: `${imagePosition.x}% ${imagePosition.y}%` }}
-              draggable="false"
-            />
-          ) : (
-            <div className="hero-image-placeholder">
-              <div className="hero-image-placeholder-content">
-                <img src={icons.camera} alt="" className="hero-image-placeholder-icon" />
-                <button
-                  className="hero-image-add-button"
-                  onClick={handleReplaceClick}
-                  disabled={readOnly}
-                >
-                  Add Cover Image
-                </button>
-                <span className="hero-image-placeholder-subtitle">Recommended: 1920×1080px</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleFileChange}
         accept="image/*"
         style={{ display: 'none' }}
-        disabled={readOnly}
       />
+      <div
+        ref={imageWrapperRef}
+        style={styles.wrapper}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onWheel={handleWheel}
+      >
+        {imageUrl && !imageError && !isImageLoading ? (
+          <>
+            <div
+              style={{
+                ...styles.zoomContainer,
+                transform: `scale(${imageZoom / 100})`,
+                transformOrigin: 'center center'
+              }}
+            >
+              <img
+                src={imageUrl}
+                alt={alt}
+                style={{
+                  ...styles.image,
+                  objectPosition: `${imagePosition.x}% ${imagePosition.y}%`
+                }}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
+              />
+            </div>
+            {!readOnly && (
+              <div style={styles.toolbar}>
+                <div style={styles.zoomControls}>
+                  <button
+                    style={{
+                      ...styles.zoomButton,
+                      ...(imageZoom <= 50 ? styles.zoomButtonDisabled : {})
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleZoom(-5);
+                    }}
+                    disabled={imageZoom <= 50}
+                  >
+                    -
+                  </button>
+                  <span style={styles.zoomValue}>
+                    {imageZoom}%
+                  </span>
+                  <button
+                    style={{
+                      ...styles.zoomButton,
+                      ...(imageZoom >= 200 ? styles.zoomButtonDisabled : {})
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleZoom(5);
+                    }}
+                    disabled={imageZoom >= 200}
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  style={styles.zoomButton}
+                  onClick={handleEditAltClick}
+                >
+                  Edit Alt Text
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div style={styles.placeholder}>
+            <div style={styles.placeholderContent}>
+              <img src={icons.camera} alt="" style={styles.placeholderIcon} />
+              <button 
+                style={styles.addButton}
+                onClick={handleReplaceClick}
+              >
+                Add Cover Image
+              </button>
+              <span style={styles.placeholderSubtitle}>
+                Recommended size: 1200x600px
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+      {isEditingAlt && (
+        <div style={styles.altEdit}>
+          <input
+            type="text"
+            value={tempAlt}
+            onChange={(e) => setTempAlt(e.target.value)}
+            placeholder="Enter image description"
+            autoFocus
+            onBlur={() => handleSaveAltClick(null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSaveAltClick(e as any);
+              } else if (e.key === 'Escape') {
+                handleCancelAltClick(e as any);
+              }
+            }}
+            style={styles.altInput}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -63,6 +63,39 @@ const commonInputStyles: React.CSSProperties = {
   justifyContent: 'flex-start',
 };
 
+const arrowButtonStyles = {
+  base: {
+    width: '32px',
+    height: '32px',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '4px',
+    color: 'white',
+    cursor: 'pointer',
+    fontSize: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+  },
+  hover: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  disabled: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  left: {
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  right: {
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+  },
+};
+
 const ArrowButton: React.FC<{
   direction: 'left' | 'right';
   onClick: () => void;
@@ -70,7 +103,11 @@ const ArrowButton: React.FC<{
   disabled?: boolean;
 }> = ({ direction, onClick, ariaLabel, disabled }) => (
   <button
-    className={`nav-arrow nav-arrow-${direction}`}
+    style={{
+      ...arrowButtonStyles.base,
+      ...(direction === 'left' ? arrowButtonStyles.left : arrowButtonStyles.right),
+      ...(disabled && { opacity: 0.5, cursor: 'not-allowed', backgroundColor: 'rgba(255, 255, 255, 0.05)' })
+    }}
     onClick={onClick}
     disabled={disabled}
     aria-label={ariaLabel}
@@ -95,8 +132,26 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   onCategoryChange,
   selectedCategory = '',
 }) => {
-  // Remove automatic category selector addition
-  const items = propItems;
+  const { categories = [] } = useConfig();
+  
+  // Add category selector if onCategoryChange is provided
+  const items = React.useMemo(() => {
+    if (onCategoryChange) {
+      return [
+        {
+          name: 'Category',
+          type: 'select' as const,
+          value: selectedCategory,
+          onChange: onCategoryChange,
+          options: categories,
+          placeholder: 'Select category...',
+          minWidth: '200px',
+        },
+        ...propItems
+      ];
+    }
+    return propItems;
+  }, [propItems, onCategoryChange, selectedCategory, categories]);
 
   const navContainerRef = useRef<HTMLDivElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
@@ -391,8 +446,23 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
 
   return (
     <div
-      className={`navigation-bar ${isExpanded ? 'expanded' : 'collapsed'}`}
-      style={{ height }}
+      style={{
+        position: 'relative',
+        width: '100%',
+        height,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 10px',
+        transition: 'all 0.3s ease',
+        ...(isExpanded ? {
+          opacity: 1,
+          transform: 'translateY(0)',
+        } : {
+          opacity: 0.8,
+          transform: 'translateY(-10px)',
+        })
+      }}
       role="navigation"
       aria-label={ariaLabel}
     >
@@ -406,6 +476,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
           bottom: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.15)',
           backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
           borderRadius: '5px',
           border: '1px solid rgba(255, 255, 255, 0.2)',
         }}
@@ -439,7 +510,6 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
       {/* Scrollable Content */}
       <div
         ref={navContainerRef}
-        className="nav-container"
         style={{
           height: '100%',
           width: variant === 'form' ? 'calc(100% - 84px)' : `calc(100% - ${(height + 10) * 2}px)`,
@@ -502,7 +572,29 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
 
       {onToggleExpand && (
         <button
-          className="nav-toggle"
+          style={{
+            position: 'absolute',
+            right: '-40px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: '32px',
+            height: '32px',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '4px',
+            color: 'white',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+          }}
           onClick={onToggleExpand}
           aria-label={isExpanded ? 'Collapse navigation' : 'Expand navigation'}
           aria-expanded={isExpanded}

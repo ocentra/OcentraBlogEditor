@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BlogSection } from '../types';
+import { BlogSection } from '../types/index';
 
 interface DocumentSectionsProps {
   sections: BlogSection[];

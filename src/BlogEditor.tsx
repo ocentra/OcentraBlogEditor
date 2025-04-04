@@ -1,21 +1,12 @@
 import './styles/index.css';
+import './styles/BlogEditor.css';
 import React, { useState, useRef, useEffect } from 'react';
-import { BlogPost, BlogSection } from './types/index';
+import { BlogPost, BlogEditorProps } from './types/interfaces';
 import Section from './components/Section';
 import { EditorSidebar } from './components/EditorSidebar';
 import NavigationBar from './components/NavigationBar';
 import HeroImage from './components/HeroImage';
 import { useConfig } from './context/ConfigContext';
-
-interface BlogEditorProps {
-  initialPost?: BlogPost;
-  onSave?: (post: BlogPost) => void;
-  onPublish?: (post: BlogPost) => void;
-  onDraft?: (post: BlogPost) => void;
-  readOnly?: boolean;
-  previewMode?: boolean;
-  previewBackground?: string;
-}
 
 export const BlogEditor: React.FC<BlogEditorProps> = ({
   initialPost,
@@ -26,7 +17,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   previewMode = false,
   previewBackground = '#ffffff'
 }) => {
-  const { defaultHeroImage } = useConfig();
+  const { defaultHeroImage, categories = [] } = useConfig();
   const [post, setPost] = useState<BlogPost>(initialPost || {
     id: crypto.randomUUID(),
     metadata: {
@@ -59,15 +50,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   });
   const editorContentRef = useRef<HTMLDivElement>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout>();
-
-  const categories = [
-    "Small Language Models",
-    "Edge Computing",
-    "Cost Optimization",
-    "Case Studies",
-    "Technology",
-    "Business"
-  ];
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   useEffect(() => {
     // Load saved draft on mount
@@ -131,7 +114,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
     }));
   };
 
-  const updateSectionMeta = (id: string, metadata: Partial<BlogSection['metadata']>) => {
+  const updateSectionMeta = (id: string, metadata: Partial<BlogPost['content']['sections'][0]['metadata']>) => {
     setPost(prev => ({
       ...prev,
       content: {
@@ -157,7 +140,11 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   const handleHeroImageChange = (url: string, alt: string, position?: {x: number, y: number}) => {
-    setHeroImage({ url, alt, position });
+    setHeroImage({ url, alt, position: position || { x: 50, y: 50 } });
+  };
+
+  const handleHeroImageAltChange = (alt: string) => {
+    setHeroImage(prev => ({ ...prev, alt }));
   };
 
   const saveDraft = () => {
@@ -239,6 +226,39 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
     });
   };
 
+  const scrollToSection = (sectionId: string) => {
+    if (sectionId === 'hero') {
+      // Scroll to top for hero image
+      if (editorContentRef.current) {
+        editorContentRef.current.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      }
+      return;
+    }
+
+    const sectionElement = sectionRefs.current[sectionId];
+    if (sectionElement && editorContentRef.current) {
+      const editorContent = editorContentRef.current;
+      const sectionRect = sectionElement.getBoundingClientRect();
+      const editorRect = editorContent.getBoundingClientRect();
+      
+      // Calculate the scroll position to center the section
+      const scrollTop = sectionElement.offsetTop - (editorRect.height / 2) + (sectionRect.height / 2);
+      
+      editorContent.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleSectionSelect = (sectionId: string) => {
+    setActiveSection(sectionId);
+    scrollToSection(sectionId);
+  };
+
   const navigationItems = [
     {
       name: 'Title',
@@ -260,8 +280,9 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
         metadata: { ...prev.metadata, category: value }
       })),
       options: categories,
-      placeholder: 'Select category...',
+      placeholder: categories.length > 0 ? 'Select category...' : 'No categories available',
       minWidth: '150px',
+      disabled: categories.length === 0,
     },
     {
       name: 'Author',
@@ -328,25 +349,25 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   return (
     <div className="blog-editor" style={{ backgroundColor }}>
       <div className="editor-container">
-        <header className="editor-header">
-          <div className="header-container">
-            <NavigationBar
-              items={navigationItems}
-              height={40}
-              showArrows={true}
-              variant="form"
-              itemGap={4}
-              itemMargin={2}
-              itemPadding="4px 10px"
-            />
-          </div>
-        </header>
-
+        <NavigationBar
+          items={navigationItems}
+          height={40}
+          showArrows={true}
+          variant="form"
+          itemGap={4}
+          itemMargin={2}
+          itemPadding="4px 10px"
+          selectedCategory={post.metadata.category}
+          onCategoryChange={(category) => setPost(prev => ({
+            ...prev,
+            metadata: { ...prev.metadata, category }
+          }))}
+        />
         <div className="editor-main">
           <EditorSidebar
             sections={post.content.sections}
             activeSection={activeSection}
-            onSectionSelect={setActiveSection}
+            onSectionSelect={handleSectionSelect}
             onSectionDelete={deleteSection}
             onSectionAdd={(title) => {
               const newSection = {
@@ -369,11 +390,10 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
             onSectionReorder={handleSectionReorder}
             isCollapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-            onHeroImageSelect={() => {
-              setActiveSection('hero');
-              scrollToHeroImage();
-            }}
             hasHeroImage={heroImage.url !== '' && heroImage.url !== defaultHeroImage}
+            onTitleChange={(sectionId, newTitle) => {
+              updateSectionMeta(sectionId, { title: newTitle });
+            }}
           />
 
           <div className="editor-content" ref={editorContentRef}>
@@ -469,30 +489,34 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
               </div>
             ) : (
               <>
-                <HeroImage
-                  imageUrl={heroImage.url}
-                  alt={heroImage.alt}
-                  position={heroImage.position}
-                  onImageChange={(url: string, alt: string, position?: { x: number; y: number }) => {
-                    setHeroImage({ url, alt, position: position || { x: 50, y: 50 } });
-                  }}
-                  onAltChange={(alt: string) => setHeroImage(prev => ({ ...prev, alt }))}
-                  isActive={activeSection === 'hero'}
-                  onSelect={() => setActiveSection('hero')}
-                />
-                {post.content.sections.map((section) => (
-                  <Section
-                    key={section.id}
-                    type={section.type}
-                    content={section.content}
-                    metadata={section.metadata}
-                    isActive={activeSection === section.id}
-                    onSelect={() => setActiveSection(section.id)}
-                    onDelete={() => deleteSection(section.id)}
-                    onUpdate={(content) => updateSection(section.id, content)}
-                    onTypeChange={(type) => updateSectionMeta(section.id, { language: type })}
-                    onTitleChange={(title) => updateSectionMeta(section.id, { title })}
+                <div ref={el => sectionRefs.current['hero'] = el}>
+                  <HeroImage
+                    imageUrl={heroImage.url}
+                    alt={heroImage.alt}
+                    position={heroImage.position}
+                    onImageChange={handleHeroImageChange}
+                    onAltChange={handleHeroImageAltChange}
+                    isActive={activeSection === 'hero'}
+                    onSelect={() => handleSectionSelect('hero')}
                   />
+                </div>
+                {post.content.sections.map((section) => (
+                  <div
+                    key={section.id}
+                    ref={el => sectionRefs.current[section.id] = el}
+                  >
+                    <Section
+                      type={section.type}
+                      content={section.content}
+                      metadata={section.metadata}
+                      isActive={activeSection === section.id}
+                      onSelect={() => handleSectionSelect(section.id)}
+                      onDelete={() => deleteSection(section.id)}
+                      onUpdate={(content) => updateSection(section.id, content)}
+                      onTypeChange={(type) => updateSectionMeta(section.id, { language: type })}
+                      onTitleChange={(title) => updateSectionMeta(section.id, { title })}
+                    />
+                  </div>
                 ))}
               </>
             )}

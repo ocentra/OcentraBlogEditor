@@ -1,4 +1,4 @@
-import { BlogPost, BlogSection } from '../types';
+import { BlogPost, BlogSection, HeroImage } from '../types/index';
 
 export class ValidationError extends Error {
   constructor(message: string) {

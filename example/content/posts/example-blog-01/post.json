@@ -15,19 +15,19 @@
     "$type": "BlogPostContent",
     "sections": [
       {
-        "$type": "BlogSection",
+        "$type": "Section",
         "id": "excerpt-1",
         "type": "text",
         "content": "Learn how to use our powerful blog editor to create beautiful, structured content with ease."
       },
       {
-        "$type": "BlogSection",
+        "$type": "Section",
         "id": "section-1",
         "type": "text",
         "content": "Welcome to our blog editor! This powerful tool allows you to create and manage your blog content with ease. Whether you're a seasoned writer or just starting out, our editor provides all the features you need to create engaging content."
       },
       {
-        "$type": "BlogSection",
+        "$type": "Section",
         "id": "section-2",
         "type": "code",
         "content": "const greeting = 'Hello, World!';\nconsole.log(greeting);",
@@ -36,7 +36,7 @@
         }
       },
       {
-        "$type": "BlogSection",
+        "$type": "Section",
         "id": "section-3",
         "type": "quote",
         "content": "The best way to predict the future is to create it.",
@@ -45,7 +45,7 @@
         }
       },
       {
-        "$type": "BlogSection",
+        "$type": "Section",
         "id": "section-4",
         "type": "image",
         "content": "https://example.com/images/blog-editor-screenshot.png",
@@ -59,7 +59,7 @@
       }
     ],
     "featuredImage": {
-      "$type": "FeaturedImage",
+      "$type": "HeroImage",
       "url": "https://example.com/images/featured-blog-editor.jpg",
       "alt": "Blog Editor in Action",
       "position": {

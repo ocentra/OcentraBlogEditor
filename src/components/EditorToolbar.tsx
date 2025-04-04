@@ -17,6 +17,59 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 
+const styles = {
+  editorToolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px',
+    background: 'rgba(0, 0, 0, 0.2)',
+    borderBottom: '1px solid var(--editor-border)',
+    flexWrap: 'wrap' as const,
+  },
+  toolbarGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '0 4px',
+    '&:not(:last-child)': {
+      borderRight: '1px solid var(--editor-border)',
+    },
+  },
+  toolbarButton: {
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: 'transparent',
+    border: '1px solid var(--editor-border)',
+    borderRadius: '4px',
+    color: 'var(--editor-text)',
+    fontSize: '14px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    padding: 0,
+    '&:hover': {
+      background: 'var(--editor-hover)',
+    },
+  },
+  toolbarButtonActive: {
+    background: 'var(--editor-accent)',
+    borderColor: 'var(--editor-accent)',
+  },
+  headingButton: {
+    width: 'auto',
+    padding: '0 8px',
+    fontWeight: 600,
+  },
+  tableButton: {
+    width: 'auto',
+    padding: '0 8px',
+    fontSize: '16px',
+  },
+};
+
 interface EditorToolbarProps {
   editor: Editor | null;
 }
@@ -57,174 +110,249 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
   ];
 
   return (
-    <div className="editor-toolbar">
-      <div className="toolbar-group">
+    <div style={styles.editorToolbar}>
+      <div style={styles.toolbarGroup}>
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={editor.isActive('bold') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('bold') ? styles.toolbarButtonActive : {})
+          }}
           title="Bold"
         >
           <span role="img" aria-label="bold">𝐁</span>
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={editor.isActive('italic') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('italic') ? styles.toolbarButtonActive : {})
+          }}
           title="Italic"
         >
           <span role="img" aria-label="italic">𝐼</span>
         </button>
         <button
           onClick={() => editor.chain().focus().toggleUnderline().run()}
-          className={editor.isActive('underline') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('underline') ? styles.toolbarButtonActive : {})
+          }}
           title="Underline"
         >
           <span role="img" aria-label="underline">U̲</span>
         </button>
         <button
           onClick={() => editor.chain().focus().toggleHighlight().run()}
-          className={editor.isActive('highlight') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('highlight') ? styles.toolbarButtonActive : {})
+          }}
           title="Highlight"
         >
           <span role="img" aria-label="highlight">🖍️</span>
         </button>
       </div>
 
-      <div className="toolbar-group">
+      <div style={styles.toolbarGroup}>
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={editor.isActive('heading', { level: 1 }) ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.headingButton,
+            ...(editor.isActive('heading', { level: 1 }) ? styles.toolbarButtonActive : {})
+          }}
           title="Heading 1"
         >
           H1
         </button>
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={editor.isActive('heading', { level: 2 }) ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.headingButton,
+            ...(editor.isActive('heading', { level: 2 }) ? styles.toolbarButtonActive : {})
+          }}
           title="Heading 2"
         >
           H2
         </button>
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={editor.isActive('heading', { level: 3 }) ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.headingButton,
+            ...(editor.isActive('heading', { level: 3 }) ? styles.toolbarButtonActive : {})
+          }}
           title="Heading 3"
         >
           H3
         </button>
       </div>
 
-      <div className="toolbar-group">
+      <div style={styles.toolbarGroup}>
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive('bulletList') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('bulletList') ? styles.toolbarButtonActive : {})
+          }}
           title="Bullet List"
         >
           •
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={editor.isActive('orderedList') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('orderedList') ? styles.toolbarButtonActive : {})
+          }}
           title="Numbered List"
         >
           1.
         </button>
         <button
           onClick={() => editor.chain().focus().toggleTaskList().run()}
-          className={editor.isActive('taskList') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('taskList') ? styles.toolbarButtonActive : {})
+          }}
           title="Task List"
         >
           ☐
         </button>
       </div>
 
-      <div className="toolbar-group">
+      <div style={styles.toolbarGroup}>
         <button
           onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive({ textAlign: 'left' }) ? styles.toolbarButtonActive : {})
+          }}
           title="Align Left"
         >
           ⇤
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive({ textAlign: 'center' }) ? styles.toolbarButtonActive : {})
+          }}
           title="Align Center"
         >
           ⇔
         </button>
         <button
           onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive({ textAlign: 'right' }) ? styles.toolbarButtonActive : {})
+          }}
           title="Align Right"
         >
           ⇥
         </button>
       </div>
 
-      <div className="toolbar-group">
+      <div style={styles.toolbarGroup}>
         <button
           onClick={() => editor.chain().focus().toggleSubscript().run()}
-          className={editor.isActive('subscript') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('subscript') ? styles.toolbarButtonActive : {})
+          }}
           title="Subscript"
         >
           x₂
         </button>
         <button
           onClick={() => editor.chain().focus().toggleSuperscript().run()}
-          className={editor.isActive('superscript') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('superscript') ? styles.toolbarButtonActive : {})
+          }}
           title="Superscript"
         >
           x²
         </button>
       </div>
 
-      <div className="toolbar-group">
+      <div style={styles.toolbarGroup}>
         <button
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={editor.isActive('codeBlock') ? 'is-active' : ''}
+          style={{
+            ...styles.toolbarButton,
+            ...(editor.isActive('codeBlock') ? styles.toolbarButtonActive : {})
+          }}
           title="Insert Code Block (Ctrl+Alt+C)"
         >
           &lt;/&gt;
         </button>
       </div>
 
-      <div className="toolbar-group">
+      <div style={styles.toolbarGroup}>
         <button
           onClick={() => editor.chain().focus().insertTable({
             rows: 3,
             cols: 3,
             withHeaderRow: true
           }).run()}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.tableButton
+          }}
           title="Insert Table"
         >
           ⊞
         </button>
         <button
           onClick={() => editor.chain().focus().addColumnBefore().run()}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.tableButton
+          }}
           title="Add Column Before"
         >
           ←|
         </button>
         <button
           onClick={() => editor.chain().focus().addColumnAfter().run()}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.tableButton
+          }}
           title="Add Column After"
         >
           |→
         </button>
         <button
           onClick={() => editor.chain().focus().addRowBefore().run()}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.tableButton
+          }}
           title="Add Row Before"
         >
           ↑_
         </button>
         <button
           onClick={() => editor.chain().focus().addRowAfter().run()}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.tableButton
+          }}
           title="Add Row After"
         >
           _↓
         </button>
         <button
           onClick={() => editor.chain().focus().deleteTable().run()}
+          style={{
+            ...styles.toolbarButton,
+            ...styles.tableButton
+          }}
           title="Delete Table"
         >
           ⌫
