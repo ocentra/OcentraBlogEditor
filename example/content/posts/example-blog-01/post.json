@@ -1,0 +1,71 @@
+{
+  "$type": "BlogPost",
+  "id": "example-blog-01",
+  "metadata": {
+    "$type": "BlogPostMetadata",
+    "title": "Getting Started with Our Blog Editor",
+    "author": "John Doe",
+    "category": "Tutorial",
+    "readTime": "5 min",
+    "date": "2024-03-20",
+    "featured": true,
+    "status": "published"
+  },
+  "content": {
+    "$type": "BlogPostContent",
+    "sections": [
+      {
+        "$type": "BlogSection",
+        "id": "excerpt-1",
+        "type": "text",
+        "content": "Learn how to use our powerful blog editor to create beautiful, structured content with ease."
+      },
+      {
+        "$type": "BlogSection",
+        "id": "section-1",
+        "type": "text",
+        "content": "Welcome to our blog editor! This powerful tool allows you to create and manage your blog content with ease. Whether you're a seasoned writer or just starting out, our editor provides all the features you need to create engaging content."
+      },
+      {
+        "$type": "BlogSection",
+        "id": "section-2",
+        "type": "code",
+        "content": "const greeting = 'Hello, World!';\nconsole.log(greeting);",
+        "metadata": {
+          "language": "javascript"
+        }
+      },
+      {
+        "$type": "BlogSection",
+        "id": "section-3",
+        "type": "quote",
+        "content": "The best way to predict the future is to create it.",
+        "metadata": {
+          "author": "Peter Drucker"
+        }
+      },
+      {
+        "$type": "BlogSection",
+        "id": "section-4",
+        "type": "image",
+        "content": "https://example.com/images/blog-editor-screenshot.png",
+        "metadata": {
+          "title": "Blog Editor Interface",
+          "image": {
+            "url": "https://example.com/images/blog-editor-screenshot.png",
+            "alt": "Screenshot of the blog editor interface"
+          }
+        }
+      }
+    ],
+    "featuredImage": {
+      "$type": "FeaturedImage",
+      "url": "https://example.com/images/featured-blog-editor.jpg",
+      "alt": "Blog Editor in Action",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      }
+    }
+  }
+} 

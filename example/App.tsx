@@ -1,6 +1,7 @@
 import React from 'react';
 import { BlogEditor, ConfigProvider } from '../src';
 import './App.css';
+import examplePost from './content/posts/example-blog-01/post.json';
 
 const App: React.FC = () => {
   const categories = [
@@ -11,31 +12,10 @@ const App: React.FC = () => {
     'Business'
   ];
 
-  const initialPost = {
-    id: crypto.randomUUID(),
-    metadata: {
-      title: '',
-      author: '',
-      category: '',
-      readTime: '',
-      featured: false,
-      status: 'draft' as const,
-      date: new Date().toISOString(),
-    },
-    content: {
-      excerpt: {
-        id: '1',
-        type: 'text' as const,
-        content: '',
-      },
-      sections: [],
-    },
-  };
-
   return (
     <ConfigProvider config={{ categories }}>
       <div className="app-container">
-        <BlogEditor initialPost={initialPost} />
+        <BlogEditor initialPost={examplePost} />
       </div>
     </ConfigProvider>
   );

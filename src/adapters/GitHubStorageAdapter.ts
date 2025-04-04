@@ -1,5 +1,6 @@
 import { StorageAdapter, BlogPostSummary } from './StorageAdapter';
 import { BlogPost } from '../types/index';
+import { validateAndConvertBlogPost, validateBlogPost, ValidationError } from '../utils/typeValidator';
 
 interface GitHubConfig {
   owner: string;
@@ -105,11 +106,14 @@ export class GitHubStorageAdapter implements StorageAdapter {
 
   async save(post: BlogPost): Promise<string> {
     const postId = post.id || crypto.randomUUID();
-    const postToSave = { ...post, id: postId };
+    const postToSave = { ...post, id: postId, $type: 'BlogPost' };
     const filePath = this.getFilePath(postId);
     const commitMessage = `docs: ${post.metadata.status === 'published' ? 'Publish' : 'Update draft'} ${post.metadata.title || postId}`;
 
     try {
+      // Validate before saving
+      validateBlogPost(postToSave);
+      
       await this.updateOrCreateFile(
         filePath,
         JSON.stringify(postToSave, null, 2),
@@ -117,7 +121,11 @@ export class GitHubStorageAdapter implements StorageAdapter {
       );
       return postId;
     } catch (error) {
-      console.error('Error saving post:', error);
+      if (error instanceof ValidationError) {
+        console.error('Validation error saving post:', error.message);
+      } else {
+        console.error('Error saving post:', error);
+      }
       throw error;
     }
   }
@@ -130,9 +138,13 @@ export class GitHubStorageAdapter implements StorageAdapter {
 
     try {
       const decodedContent = decodeURIComponent(escape(atob(fileData.content)));
-      return JSON.parse(decodedContent) as BlogPost;
+      return validateAndConvertBlogPost(decodedContent);
     } catch (error) {
-      console.error(`Error parsing post ${id}:`, error);
+      if (error instanceof ValidationError) {
+        console.error(`Validation error loading post ${id}:`, error.message);
+      } else {
+        console.error(`Error parsing post ${id}:`, error);
+      }
       return null;
     }
   }

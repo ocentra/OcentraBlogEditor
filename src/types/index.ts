@@ -26,7 +26,6 @@ export interface BlogPost {
     date: string;
   };
   content: {
-    excerpt: BlogSection;
     sections: BlogSection[];
     featuredImage?: {
       url: string;

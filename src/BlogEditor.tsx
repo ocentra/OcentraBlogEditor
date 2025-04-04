@@ -39,8 +39,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
       status: 'draft'
     },
     content: {
-      sections: [],
-      excerpt: { id: 'excerpt', type: 'text', content: '' }
+      sections: []
     }
   });
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -174,7 +173,6 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
         date: post.metadata?.date || new Date().toISOString(),
       },
       content: {
-        excerpt: post.content.sections[0] || { id: 'excerpt', type: 'text', content: '' },
         sections: post.content.sections,
         featuredImage: heroImage.url ? {
           url: heroImage.url,
@@ -201,7 +199,6 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
         date: new Date().toISOString(),
       },
       content: {
-        excerpt: post.content.sections[0] || { id: 'excerpt', type: 'text', content: '' },
         sections: post.content.sections,
         featuredImage: heroImage.url ? {
           url: heroImage.url,
@@ -296,6 +293,13 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
         ...prev,
         metadata: { ...prev.metadata, featured: value === 'true' }
       })),
+    },
+    {
+      name: 'Background',
+      type: 'color' as const,
+      value: backgroundColor,
+      onChange: (value: string) => setBackgroundColor(value),
+      minWidth: '100px',
     },
     {
       name: 'Preview',
