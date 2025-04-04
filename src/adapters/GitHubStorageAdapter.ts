@@ -21,8 +21,8 @@ export class GitHubStorageAdapter implements StorageAdapter {
     }
     this.config = {
       branch: 'main',
-      basePath: 'blogs',
-      imageBasePath: 'assets/images',
+      basePath: 'content/posts',
+      imageBasePath: 'content/images',
       ...config,
     };
     this.apiUrl = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents`;
