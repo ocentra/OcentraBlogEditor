@@ -1,0 +1,319 @@
+.editor-sidebar {
+  width: 300px;
+  position: relative;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(2, 6, 23, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgb(51, 122, 183);
+}
+
+.editor-sidebar:focus-within {
+  border-color: rgb(0, 123, 255);
+}
+
+.editor-sidebar.collapsed {
+  width: 40px;
+}
+
+.editor-sidebar.collapsed .sidebar-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 100%;
+  height: 32px;
+  background: rgba(2, 6, 23, 0.3);
+  border: none;
+  border-radius: 16px 16px 0 0;
+  color: var(--editor-text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background: rgba(2, 6, 23, 0.4);
+}
+
+.sidebar-toggle::before {
+  content: "⟨";
+  display: inline-block;
+  transition: transform 0.3s ease;
+  transform: rotate(0deg);
+}
+
+.editor-sidebar.collapsed .sidebar-toggle {
+  width: 40px;
+  border-radius: 0;
+  border-left: none;
+}
+
+.editor-sidebar.collapsed .sidebar-toggle::before {
+  transform: rotate(180deg);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sidebar-content {
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+  padding-top: 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.document-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.document-tree h3 {
+  color: var(--editor-text);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.hero-image-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(2, 6, 23, 0.3);
+  border: none;
+  border-radius: 4px;
+  color: var(--editor-text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.hero-image-btn:hover {
+  background: rgba(2, 6, 23, 0.4);
+}
+
+.hero-image-btn.has-image {
+  background: rgba(0, 123, 255, 0.15);
+  color: var(--editor-accent);
+}
+
+.sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.document-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  background: rgba(2, 6, 23, 0.3);
+}
+
+.document-section:hover {
+  background: rgba(2, 6, 23, 0.4);
+}
+
+.document-section:focus {
+  outline: none;
+  border-color: var(--editor-accent);
+}
+
+.document-section.active {
+  background: rgba(2, 6, 23, 0.5);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.document-section.drag-over {
+  border-color: var(--editor-accent);
+}
+
+.drag-handle {
+  color: var(--editor-text);
+  cursor: grab;
+  font-size: 16px;
+  line-height: 1;
+  user-select: none;
+}
+
+.document-section:active .drag-handle {
+  cursor: grabbing;
+}
+
+.section-title {
+  flex: 1;
+  font-size: 14px;
+  color: var(--editor-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delete-section-btn {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: var(--editor-text);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.document-section:hover .delete-section-btn,
+.document-section:focus .delete-section-btn {
+  opacity: 1;
+}
+
+.delete-section-btn:hover {
+  color: var(--editor-accent);
+}
+
+.add-section-container {
+  margin-top: 8px;
+}
+
+.add-section-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(2, 6, 23, 0.3);
+  border: none;
+  border-radius: 4px;
+  color: var(--editor-text);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-section-btn:hover {
+  background: rgba(2, 6, 23, 0.4);
+}
+
+.new-section-form {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 20, 40, 0.8);
+  border-radius: 4px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.new-section-input {
+  flex: 1;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: var(--editor-text);
+  font-size: 14px;
+}
+
+.new-section-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.new-section-input:focus {
+  outline: none;
+}
+
+.new-section-btn.add {
+  padding: 6px;
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(22, 163, 74);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.new-section-btn.add:hover:not(:disabled) {
+  background-color: rgb(34, 197, 94);
+}
+
+.new-section-btn.add:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.new-section-btn.cancel {
+  display: none;
+}
+
+.empty-sections {
+  text-align: center;
+  padding: 32px 20px;
+  border-radius: 8px;
+  background: rgba(2, 6, 23, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.empty-sections p {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+.add-first-section-btn {
+  padding: 10px 20px;
+  background: rgba(0, 123, 255, 0.15);
+  border: none;
+  border-radius: 4px;
+  color: var(--editor-accent);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.add-first-section-btn:hover {
+  background: rgba(0, 123, 255, 0.25);
+} 

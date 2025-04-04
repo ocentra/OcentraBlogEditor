@@ -1,0 +1,64 @@
+{
+  "name": "@ocentra/blog-editor",
+  "version": "1.0.0",
+  "description": "A rich text editor component for Ocentra blog posts",
+  "main": "dist/ocentra-blog-editor.umd.js",
+  "module": "dist/ocentra-blog-editor.es.js",
+  "types": "dist/index.d.ts",
+  "style": "dist/blog-editor.css",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "prepare": "npm run build",
+    "dev": "cd example && vite --port 8000",
+    "preview": "cd example && vite preview --port 8000",
+    "build:example": "BUILD_EXAMPLE=true vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "dependencies": {
+    "@tiptap/core": "^2.11.7",
+    "@tiptap/extension-bold": "^2.11.7",
+    "@tiptap/extension-bullet-list": "^2.11.7",
+    "@tiptap/extension-code-block": "^2.11.7",
+    "@tiptap/extension-code-block-lowlight": "^2.11.7",
+    "@tiptap/extension-heading": "^2.11.7",
+    "@tiptap/extension-highlight": "^2.11.7",
+    "@tiptap/extension-image": "^2.11.7",
+    "@tiptap/extension-italic": "^2.11.7",
+    "@tiptap/extension-link": "^2.11.7",
+    "@tiptap/extension-ordered-list": "^2.11.7",
+    "@tiptap/extension-subscript": "^2.11.7",
+    "@tiptap/extension-superscript": "^2.11.7",
+    "@tiptap/extension-table": "^2.11.7",
+    "@tiptap/extension-table-cell": "^2.11.7",
+    "@tiptap/extension-table-header": "^2.11.7",
+    "@tiptap/extension-table-row": "^2.11.7",
+    "@tiptap/extension-task-item": "^2.11.7",
+    "@tiptap/extension-task-list": "^2.11.7",
+    "@tiptap/extension-text-align": "^2.11.7",
+    "@tiptap/extension-underline": "^2.11.7",
+    "@tiptap/pm": "^2.11.7",
+    "@tiptap/react": "^2.11.7",
+    "@tiptap/starter-kit": "^2.11.7",
+    "@types/node": "^22.14.0",
+    "@types/react-router-dom": "^5.3.3",
+    "lowlight": "^3.3.0",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.4.1",
+    "shiki": "^3.2.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.6",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "~5.7.2",
+    "vite": "^5.1.4",
+    "vite-plugin-dts": "^3.7.3"
+  }
+}
