@@ -28,4 +28,7 @@ Thumbs.db
 
 # Logs
 logs/
-*.log 
+*.log
+
+# Last Stash directory
+last Stash/ 
