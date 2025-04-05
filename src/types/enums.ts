@@ -1,0 +1,11 @@
+export enum StorageEvent {
+    SAVE = 'SAVE',
+    LOAD = 'LOAD',
+    DELETE = 'DELETE',
+    LIST = 'LIST',
+    SAVE_COMPLETE = 'SAVE_COMPLETE',
+    LOAD_COMPLETE = 'LOAD_COMPLETE',
+    DELETE_COMPLETE = 'DELETE_COMPLETE',
+    LIST_COMPLETE = 'LIST_COMPLETE',
+    ERROR = 'ERROR'
+} 

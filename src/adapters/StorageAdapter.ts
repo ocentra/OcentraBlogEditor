@@ -8,10 +8,10 @@ export interface BlogPostSummary {
 }
 
 export interface StorageAdapter {
-  save(post: BlogPost): Promise<string>; // Returns post ID
+  save(post: BlogPost): Promise<void>;
   load(id: string): Promise<BlogPost | null>;
-  list(): Promise<BlogPostSummary[]>;
   delete(id: string): Promise<void>;
+  list(): Promise<BlogPost[]>;
   uploadImage?(file: File): Promise<string>; // Optional: Returns image URL
   deleteImage?(url: string): Promise<void>; // Optional
 }

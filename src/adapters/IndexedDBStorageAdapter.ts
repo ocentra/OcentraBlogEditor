@@ -1,4 +1,4 @@
-import { StorageAdapter, BlogPostSummary } from './StorageAdapter';
+import { StorageAdapter } from './StorageAdapter';
 import { BlogPost } from '../types/interfaces';
 import { validateAndConvertBlogPost, validateBlogPost, ValidationError } from '../utils/typeValidator';
 
@@ -57,9 +57,8 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     });
   }
 
-  async save(post: BlogPost): Promise<string> {
-    const postId = post.id || crypto.randomUUID();
-    const postToSave = { ...post, id: postId, $type: 'BlogPost' };
+  async save(post: BlogPost): Promise<void> {
+    const postToSave = { ...post, $type: 'BlogPost' };
 
     try {
       validateBlogPost(postToSave);
@@ -67,8 +66,6 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
       await this.withTransaction(this.POSTS_STORE, 'readwrite', async (store) => {
         await store.put(postToSave);
       });
-      
-      return postId;
     } catch (error) {
       if (error instanceof ValidationError) {
         console.error('Validation error saving post:', error.message);
@@ -105,22 +102,18 @@ export class IndexedDBStorageAdapter implements StorageAdapter {
     }
   }
 
-  async list(): Promise<BlogPostSummary[]> {
+  async list(): Promise<BlogPost[]> {
     try {
       return await this.withTransaction(this.POSTS_STORE, 'readonly', async (store) => {
         const request = store.getAll();
         return new Promise((resolve, reject) => {
           request.onsuccess = () => {
             const posts = request.result;
-            const summaries: BlogPostSummary[] = posts.map(post => ({
-              id: post.id,
-              title: post.metadata.title,
-              date: post.metadata.date,
-              status: post.metadata.status
-            }));
-            resolve(summaries.sort((a, b) => 
-              new Date(b.date).getTime() - new Date(a.date).getTime()
-            ));
+            try {
+              resolve(posts.map(post => validateAndConvertBlogPost(post)));
+            } catch (error) {
+              reject(error);
+            }
           };
           request.onerror = () => reject(request.error);
         });

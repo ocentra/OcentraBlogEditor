@@ -1,0 +1,485 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# React/React Native + TypeScript Project Rules & Best Practices
+
+This document outlines the rules, conventions, and best practices for developing React or React Native projects using TypeScript. Adhering to these guidelines ensures a consistent, maintainable, scalable, and type-safe codebase, while minimizing linter errors and improving developer experience.
+
+## Table of Contents
+
+1.  [File Structure](#1-file-structure)
+2.  [Naming Conventions](#2-naming-conventions)
+3.  [TypeScript Usage](#3-typescript-usage)
+4.  [Component Design](#4-component-design)
+5.  [State Management](#5-state-management)
+6.  [Hooks](#6-hooks)
+7.  [Styling](#7-styling)
+8.  [API Interaction](#8-api-interaction)
+9.  [Linting and Formatting](#9-linting-and-formatting)
+10. [Testing](#10-testing)
+11. [React Native Specific Rules](#11-react-native-specific-rules)
+12. [Environment Variables](#12-environment-variables)
+13. [Code Splitting (React Web)](#13-code-splitting-react-web)
+14. [Accessibility (a11y)](#14-accessibility-a11y)
+15. [Performance Optimization](#15-performance-optimization)
+16. [Error Handling](#16-error-handling)
+17. [Internationalization (i18n)](#17-internationalization-i18n)
+18. [Dependency Management](#18-dependency-management)
+19. [Version Control](#19-version-control)
+20. [Documentation](#20-documentation)
+21. [Setup & Enforcement](#21-setup--enforcement)
+
+---
+
+## 1. File Structure
+
+A predictable and organized file structure is crucial for maintainability and scalability.
+
+-   **Base Structure**: All source code must reside under the `src/` directory.
+    ```
+    src/
+    ├── assets/         # Static assets (images, fonts, etc.)
+    ├── components/     # Shared, reusable UI components
+    ├── config/         # Application configuration files
+    ├── constants/      # Shared constant values
+    ├── contexts/       # React Context API providers/consumers
+    ├── hooks/          # Custom React hooks
+    ├── navigation/     # Navigation setup (e.g., React Navigation for RN)
+    ├── pages/          # Page-level components (React Web)
+    ├── screens/        # Screen-level components (React Native)
+    ├── services/       # API interaction logic, external services
+    ├── store/          # State management (Redux, Zustand, etc.)
+    ├── styles/         # Global styles, theme definitions
+    ├── types/          # Shared TypeScript type definitions and interfaces
+    └── utils/          # Utility functions, helpers
+    ```
+-   **Component/Screen Folders**: Each non-trivial component, screen, or page should reside in its own directory.
+    -   The directory name should match the component name (PascalCase).
+    -   The main component file should be named `ComponentName.tsx`.
+    -   Colocate related files like styles, tests, and stories.
+    -   Use an `index.ts` file for cleaner imports (`import { Button } from '@/components/Button'`).
+    ```
+    src/components/Button/
+    ├── Button.tsx         # Component logic and JSX
+    ├── Button.styles.ts   # Styles (if using styled-components, StyleSheet, etc.)
+    ├── Button.test.tsx    # Unit/Integration tests
+    ├── Button.stories.tsx # Storybook stories (optional)
+    └── index.ts           # Barrel file exporting the component (export * from './Button')
+    ```
+-   **Convention**: Adhere strictly to this structure. Deviations should be discussed and agreed upon by the team.
+
+## 2. Naming Conventions
+
+Consistent naming improves readability and reduces cognitive load.
+
+-   **Components**: Use `PascalCase` (e.g., `UserProfileCard.tsx`).
+-   **Hooks**: Use `use` prefix followed by `camelCase` (e.g., `useFetchData.ts`).
+-   **Files/Folders**: Use `PascalCase` for components/screens/pages directories and files. Use `camelCase` for non-component files (e.g., `apiClient.ts`, `formattingUtils.ts`).
+-   **Variables/Functions**: Use `camelCase` (e.g., `const userData = ...`, `function handleLogin() {}`).
+-   **Constants**: Use `UPPER_SNAKE_CASE` for true constants (e.g., `const API_TIMEOUT = 5000;`).
+-   **Types/Interfaces**: Use `PascalCase` (e.g., `interface UserProfile { ... }`, `type UserId = string;`). Add a `Props` or `State` suffix where appropriate (e.g., `ButtonProps`, `UserState`).
+
+## 3. TypeScript Usage
+
+Leverage TypeScript's features for a robust and maintainable codebase.
+
+-   **Strict Mode**: Enable `strict` mode in `tsconfig.json`.
+-   **Explicit Types**:
+    -   Define types/interfaces for all component props and state. Use `React.FC<Props>` or function components with explicit prop typing.
+    -   Type function parameters and return values explicitly, unless trivially inferred.
+    ```tsx
+    interface UserCardProps {
+      userId: string;
+      onSelect: (id: string) => void;
+    }
+
+    Preferred: Explicit typing on function declaration
+    const UserCard = ({ userId, onSelect }: UserCardProps): JSX.Element => {
+     
+      return <div>{userId}</div>;
+    };
+
+     Alternative: Using React.FC (less preferred with children handling changes)
+     const UserCard: React.FC<UserCardProps> = ({ userId, onSelect, children }) => { ... }
+    ```
+-   **`interface` vs `type`**:
+    -   Use `interface` for defining object shapes or implementing classes. Interfaces can be extended.
+    -   Use `type` for unions, intersections, tuples, primitives, or more complex types using utility types.
+-   **Avoid `any`**: Strictly avoid using the `any` type. Use `unknown` if a type is truly unknown and perform necessary type checks/assertions. Enable the `@typescript-eslint/no-explicit-any` lint rule.
+-   **Type Inference**: Rely on TypeScript’s type inference for local variables and simple cases where the type is obvious.
+-   **Generics**: Utilize generics for creating reusable, type-safe functions, hooks, or components.
+-   **Shared Types**: Place widely used types/interfaces in `src/types/`. Define types close to where they are used if they are specific to a module/component.
+-   **Utility Types**: Use built-in utility types like `Partial`, `Required`, `Readonly`, `Pick`, `Omit` to manipulate types effectively.
+
+## 4. Component Design
+
+Follow principles for creating clean and reusable components.
+
+-   **Single Responsibility Principle (SRP)**: Components should ideally do one thing well. Decompose large components into smaller, focused ones.
+-   **Props**: Pass data down via props. Avoid deeply nested prop drilling; consider Context API or state management solutions.
+-   **Composition**: Favor composition over inheritance. Build complex UIs by combining simpler components.
+-   **Stateless vs Stateful**: Prefer functional components with hooks. Keep state localized where possible. Lift state up only when necessary.
+
+## 5. State Management
+
+Choose and implement a state management strategy consistently.
+
+-   **Options**: React Context API, Zustand, Redux Toolkit, MobX, etc. Choose one primary solution for global state.
+-   **Structure**: If using Redux Toolkit:
+    -   `src/store/store.ts`: Store configuration.
+    -   `src/store/features/`: Feature-based slices (reducers, actions, selectors).
+    -   `src/store/hooks.ts`: Typed versions of `useDispatch` and `useSelector`.
+-   **Type Safety**: Ensure state, actions, reducers, and selectors are fully typed. Utilize utilities provided by the chosen library (e.g., `createSlice` in Redux Toolkit).
+    ```typescript
+    // Example: Redux Toolkit Slice
+    import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+
+    interface CounterState {
+      value: number;
+    }
+
+    const initialState: CounterState = { value: 0 };
+
+    const counterSlice = createSlice({
+      name: 'counter',
+      initialState,
+      reducers: {
+        increment: (state) => { state.value += 1; },
+        incrementByAmount: (state, action: PayloadAction<number>) => {
+          state.value += action.payload;
+        },
+      },
+    });
+
+    export const { increment, incrementByAmount } = counterSlice.actions;
+    export default counterSlice.reducer;
+    ```
+
+## 6. Hooks
+
+Use hooks effectively for logic reuse and side effects.
+
+-   **Custom Hooks**: Extract reusable component logic (stateful logic, side effects) into custom hooks (e.g., `useFetch`, `useAuth`). Place them in `src/hooks/`.
+-   **Rules of Hooks**: Always follow the Rules of Hooks (call hooks at the top level, only from React functions). Enable the `eslint-plugin-react-hooks` rules (`rules-of-hooks`, `exhaustive-deps`).
+-   **Dependencies**: Provide accurate dependency arrays for `useEffect`, `useCallback`, `useMemo`. Use the `exhaustive-deps` lint rule to catch omissions.
+
+## 7. Styling
+
+Maintain a consistent and maintainable styling approach.
+
+-   **Choose One Method**: Standardize on a single primary styling method:
+    -   **React Web**: Styled Components, Emotion, CSS Modules, Tailwind CSS / Utility Classes.
+    -   **React Native**: `StyleSheet.create`, Styled Components, Tamagui, Restyle, Nativewind (Tailwind for RN).
+-   **Colocation**: Keep component-specific styles colocated with the component (e.g., `Button.styles.ts`).
+-   **Theming**: Implement a theme provider (`src/styles/theme.ts`) for consistent colors, typography, spacing, etc. Access theme values within styles.
+-   **Avoid Inline Styles**: Minimize the use of inline styles (`style={{ ... }}`) for anything beyond dynamic properties that change frequently.
+
+## 8. API Interaction
+
+Structure API calls cleanly and consistently.
+
+-   **Service Layer**: Create a dedicated layer (`src/services/` or `src/api/`) for API communication logic.
+-   **API Client**: Use a configured client (e.g., Axios instance, typed `fetch` wrapper) for base URL, headers, interceptors (error handling, auth tokens).
+-   **Typing**: Define TypeScript interfaces/types for API request payloads and response data.
+-   **State Handling**: Manage loading, error, and data states related to API calls predictably, often within components or custom hooks (`useQuery`, `useMutation` from libraries like React Query/RTK Query, or custom `useFetch` hooks).
+
+## 9. Linting and Formatting
+
+Enforce code style and catch potential errors automatically.
+
+-   **ESLint**: Use ESLint with `@typescript-eslint/parser` and relevant plugins (`@typescript-eslint`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-plugin-jsx-a11y`). Start with recommended rule sets and customize as needed. Enforce strict rules like `no-explicit-any`, `no-unused-vars`, `exhaustive-deps`.
+    ```json
+    // Example .eslintrc.json (partial)
+    {
+      "parser": "@typescript-eslint/parser",
+      "plugins": ["@typescript-eslint", "react", "react-hooks", "jsx-a11y"],
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:react/recommended",
+        "plugin:react-hooks/recommended",
+        "plugin:jsx-a11y/recommended",
+        "prettier" // Must be last to override other formatting rules
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "error",
+        "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+        "react/prop-types": "off", // Use TypeScript for prop types
+        "react/react-in-jsx-scope": "off", // Not needed with React 17+ new JSX transform
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "warn",
+        // Add project-specific rules
+      },
+      "settings": {
+        "react": { "version": "detect" }
+      }
+    }
+    ```
+-   **Prettier**: Use Prettier for automatic code formatting. Configure it via `.prettierrc.json`.
+    ```json
+    // Example .prettierrc.json
+    {
+      "singleQuote": true,
+      "semi": true, // Or false, be consistent
+      "trailingComma": "all",
+      "printWidth": 80,
+      "tabWidth": 2,
+      "arrowParens": "always"
+    }
+    ```
+-   **Workflow Integration**:
+    -   Use **Husky** and **lint-staged** to run ESLint and Prettier on staged files before commits.
+    -   Configure your IDE/editor (e.g., VS Code) to format on save and show lint errors inline.
+
+## 10. Testing
+
+Ensure code quality and prevent regressions with comprehensive tests.
+
+-   **Frameworks**: Use **Jest** as the test runner. Use **React Testing Library** (`@testing-library/react` or `@testing-library/react-native`) for component testing, focusing on user behavior rather than implementation details.
+-   **Types of Tests**:
+    -   **Unit Tests**: Test individual functions, hooks, or utilities in isolation.
+    -   **Integration Tests**: Test components interacting with each other or with state management/context.
+    -   **End-to-End (E2E) Tests**: Test user flows across the entire application (e.g., using Cypress for Web, Detox or Maestro for React Native).
+-   **File Placement**: Place test files (`*.test.tsx` or `*.spec.tsx`) next to the source files they are testing.
+-   **Coverage**: Aim for meaningful test coverage, focusing on critical paths, complex logic, and business requirements. Don't just chase percentage points. Use coverage reports (`jest --coverage`) to identify untested areas.
+-   **Mocking**: Use Jest's mocking capabilities (`jest.fn()`, `jest.mock()`) to isolate units under test and mock dependencies (API calls, native modules).
+
+## 11. React Native Specific Rules
+
+Address platform differences and native interactions carefully.
+
+-   **Platform-Specific Code**: Use platform-specific file extensions (`.ios.tsx`, `.android.tsx`) when significant logic differences exist. Use `Platform.select()` for minor conditional adjustments.
+    ```typescript
+    // Example using Platform.select
+    import { Platform, StyleSheet } from 'react-native';
+
+    const styles = StyleSheet.create({
+      container: {
+        paddingTop: Platform.OS === 'ios' ? 20 : 0,
+      },
+      // Example using Platform.select
+      header: Platform.select({
+        ios: { backgroundColor: 'grey' },
+        android: { backgroundColor: 'blue' },
+        default: { backgroundColor: 'white' }, // Optional default
+      }),
+    });
+    ```
+-   **Native Modules**: Ensure native modules have TypeScript definitions. If types are not available via `@types/`, create custom definition files (`.d.ts`).
+-   **Performance**: Be mindful of bridge traffic. Avoid frequent updates that trigger native re-renders unnecessarily. Optimize `FlatList` performance (`keyExtractor`, `getItemLayout`, `removeClippedSubviews`, `windowSize`). Use libraries like `react-native-reanimated` and `react-native-gesture-handler` for smooth animations and interactions.
+
+## 12. Environment Variables
+
+Manage configuration and secrets securely.
+
+-   **React Web**: Use `.env` files and prefix variables with `REACT_APP_` (standard for Create React App) or configure your build tool (Vite, Webpack) accordingly. Access via `process.env.REACT_APP_VARIABLE_NAME`.
+-   **React Native**: Use libraries like `react-native-config`. Access variables via `import Config from 'react-native-config';`.
+-   **Security**: **Never** commit `.env` files or files containing secrets/API keys to version control. Add them to your `.gitignore` file. Provide a template file (e.g., `.env.example`) with placeholder values.
+-   **Validation**: Consider validating required environment variables at application startup to fail fast if configuration is missing.
+
+## 13. Code Splitting (React Web)
+
+Improve initial load performance by splitting code bundles.
+
+-   **Implementation**: Use `React.lazy()` for component-level splitting and `React.Suspense` to handle loading states. Integrate with routing libraries (e.g., React Router) for route-based splitting.
+    ```tsx
+    import React, { Suspense, lazy } from 'react';
+
+    const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+
+    const AppRouter = () => (
+      <Suspense fallback={<div>Loading page...</div>}>
+        <Routes>
+          {/* ... other routes */}
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
+      </Suspense>
+    );
+    ```
+-   **Granularity**: Split primarily at the route/page level. Consider splitting large, non-critical components that are not needed immediately.
+-   **Note**: Code splitting is less common/automatic in React Native standard bundles, but tools like RePack enable Webpack features including code splitting.
+
+## 14. Accessibility (a11y)
+
+Ensure the application is usable by everyone, including users with disabilities.
+
+-   **React Web**:
+    -   Use semantic HTML elements (`<nav>`, `<main>`, `<button>`).
+    -   Use ARIA attributes (`aria-label`, `aria-required`, `role`) appropriately, especially for custom interactive components.
+    -   Ensure sufficient color contrast.
+    -   Ensure keyboard navigability and focus management.
+-   **React Native**:
+    -   Use accessibility props: `accessibilityLabel` (screen reader announcement), `accessibilityHint` (explains result of action), `accessibilityRole` (element type), `accessibilityState` (e.g., `{ checked: true, disabled: false }`).
+    -   Ensure touch targets are sufficiently large.
+    -   Test with device accessibility features (VoiceOver on iOS, TalkBack on Android).
+-   **Testing**: Use accessibility testing tools (e.g., Axe for web, device screen readers) during development and testing.
+
+## 15. Performance Optimization
+
+Write performant code and optimize assets.
+
+-   **Memoization**: Use `React.memo` for components, `useMemo` for expensive calculations, and `useCallback` for functions passed as props to memoized children *only when necessary* to prevent unnecessary re-renders. Profile before optimizing.
+    ```tsx
+    import React, { useState, useCallback, memo } from 'react';
+
+    // Child component memoized
+    const MemoizedButton = memo(({ onClick, label }: { onClick: () => void; label: string }) => {
+      console.log(`Rendering Button: ${label}`);
+      return <button onClick={onClick}>{label}</button>;
+    });
+
+    const ParentComponent = () => {
+      const [count, setCount] = useState(0);
+      const [otherState, setOtherState] = useState(false);
+
+      // useCallback ensures this function reference doesn't change unless count changes
+      // BUT: Only useful if MemoizedButton actually benefits from memoization
+      const handleIncrement = useCallback(() => {
+        setCount(c => c + 1);
+      }, []); // Empty dependency array means it never changes
+
+      const handleToggle = () => setOtherState(s => !s);
+
+      return (
+        <div>
+          Count: {count}
+          {/* handleIncrement reference is stable thanks to useCallback */}
+          <MemoizedButton onClick={handleIncrement} label="Increment" />
+          {/* Anonymous functions create new references on every render */}
+          <button onClick={handleToggle}>Toggle Other State</button>
+        </div>
+      );
+    };
+    ```
+-   **Avoid Anonymous Functions in Props**: If passing functions to memoized or pure components, use `useCallback` or define them outside the render scope if they don't depend on component state/props.
+-   **Asset Optimization**: Compress images (use formats like WebP), lazy-load offscreen images, bundle efficiently.
+-   **Profiling**: Use React DevTools Profiler (Web) or Flipper/React Native Debugger Profiler (RN) to identify performance bottlenecks.
+
+## 16. Error Handling
+
+Implement robust error handling for a better user experience.
+
+-   **Error Boundaries**: Wrap logical sections of the UI (e.g., routes, major features) with React Error Boundaries to catch rendering errors in child components and display fallback UI.
+    ```tsx
+    import React, { Component, ErrorInfo, ReactNode } from 'react';
+
+    interface Props {
+      children: ReactNode;
+      fallbackUI?: ReactNode;
+    }
+    interface State {
+      hasError: boolean;
+    }
+
+    class ErrorBoundary extends Component<Props, State> {
+      public state: State = { hasError: false };
+
+      public static getDerivedStateFromError(_: Error): State {
+        return { hasError: true };
+      }
+
+      public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+        console.error("Uncaught error:", error, errorInfo);
+        // Optional: Log error to an error reporting service (Sentry, etc.)
+      }
+
+      public render() {
+        if (this.state.hasError) {
+          return this.props.fallbackUI || <h1>Something went wrong.</h1>;
+        }
+        return this.props.children;
+      }
+    }
+
+    export default ErrorBoundary;
+    ```
+-   **Async Errors**: Use `try...catch` blocks or promise `.catch()` handlers for asynchronous operations (e.g., API calls) and update the UI state accordingly (show error messages).
+-   **Logging**: Log errors to the console during development. Use a remote error tracking service (e.g., Sentry, Bugsnag) in production to monitor and diagnose issues.
+
+## 17. Internationalization (i18n)
+
+Design the application to support multiple languages and regions.
+
+-   **Library**: Use a dedicated i18n library like `react-i18next` (integrates with `i18next`).
+-   **Structure**: Store translation files (e.g., JSON) in a dedicated directory (`src/locales/` or `src/translations/`), typically organized by language (`en.json`, `es.json`).
+-   **Usage**: Abstract text content into translation keys and use the library's hooks or components to display translated strings.
+    ```tsx
+    // Example using react-i18next hook
+    import { useTranslation } from 'react-i18next';
+
+    const Greeting = () => {
+      const { t } = useTranslation();
+      return <h1>{t('welcomeMessage')}</h1>;
+    }
+    ```
+-   **Testing**: Ensure UI layouts work correctly with varying text lengths across different languages.
+
+## 18. Dependency Management
+
+Manage external libraries carefully.
+
+-   **Consistency**: Use a single package manager consistently (`npm`, `yarn`, or `pnpm`). Commit the lock file (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`).
+-   **Updates**: Regularly review and update dependencies to benefit from bug fixes, performance improvements, and security patches. Use tools like `npm outdated` or Dependabot.
+-   **Auditing**: Periodically run `npm audit` or `yarn audit` to check for known security vulnerabilities in dependencies.
+-   **Bundle Size**: Be mindful of the size impact of adding new dependencies. Use tools like `bundle-analyzer` (Webpack) or `source-map-explorer` to inspect bundle contents.
+
+## 19. Version Control
+
+Follow Git best practices for effective collaboration.
+
+-   **Branching Strategy**: Use a standard branching model (e.g., Gitflow, GitHub Flow). Create feature branches for new work.
+-   **Commit Messages**: Write clear, concise, and descriptive commit messages. Consider using the [Conventional Commits](https://www.conventionalcommits.org/) specification for consistency and automated changelog generation.
+    ```
+    feat: add user login functionality
+    fix: correct validation error on signup form
+    chore: update linting configuration
+    docs: explain environment variable setup
+    ```
+-   **Pull Requests (PRs)**: Use PRs for code review. Ensure PRs are focused, have clear descriptions, and link to relevant issues. Require reviews and passing CI checks before merging.
+-   **.gitignore**: Maintain a comprehensive `.gitignore` file to exclude unnecessary files (node_modules, build artifacts, .env files, OS-specific files).
+
+## 20. Documentation
+
+Document code where necessary for clarity and maintainability.
+
+-   **Components**: Document complex or reusable components, explaining their props, usage, and any non-obvious behavior (e.g., using JSDoc comments or Markdown files). Consider using Storybook for interactive component documentation and development.
+-   **Hooks/Utilities**: Document custom hooks and complex utility functions, explaining their purpose, parameters, and return values.
+-   **Setup/Architecture**: Maintain README files explaining project setup, architecture decisions, and common workflows.
+
+## 21. Setup & Enforcement
+
+Integrate tools to automatically enforce these rules.
+
+1.  **Install Dev Dependencies**:
+    ```bash
+    npm install --save-dev typescript eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-jsx-a11y prettier eslint-config-prettier eslint-plugin-prettier husky lint-staged @types/react @types/react-native # Add other type definitions as needed
+    # Or using yarn:
+    # yarn add --dev typescript eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-react eslint-plugin-react-hooks eslint-plugin-jsx-a11y prettier eslint-config-prettier eslint-plugin-prettier husky lint-staged @types/react @types/react-native
+    ```
+2.  **Configure ESLint**: Create/update `.eslintrc.json` (or `.js`/`.yaml`) as shown in [Section 9](#9-linting-and-formatting).
+3.  **Configure Prettier**: Create `.prettierrc.json` (or other formats) as shown in [Section 9](#9-linting-and-formatting). Create a `.prettierignore` file if needed.
+4.  **Configure TypeScript**: Create/update `tsconfig.json` with appropriate settings (e.g., `"strict": true`, `"jsx": "react-jsx"`).
+5.  **Setup Husky & lint-staged**:
+    -   Run `npx husky install` (or equivalent setup steps for your Husky version).
+    -   Add a pre-commit hook: `npx husky add .husky/pre-commit "npx lint-staged"`
+    -   Configure `lint-staged` in your `package.json`:
+        ```json
+        // package.json
+        {
+          // ... other package.json contents
+          "lint-staged": {
+            "*.{js,jsx,ts,tsx}": [
+              "eslint --fix",
+              "prettier --write"
+            ],
+            "*.{json,md,css,scss}": [
+              "prettier --write"
+            ]
+          }
+        }
+        ```
+6.  **IDE Integration**: Configure your code editor (VS Code, WebStorm, etc.) to use ESLint and Prettier for formatting on save and inline error reporting. Install relevant editor extensions.
+7.  **CI Checks**: Integrate linting, type checking (`tsc --noEmit`), and testing (`npm test` or `yarn test`) into your Continuous Integration (CI) pipeline (e.g., GitHub Actions, GitLab CI) to enforce rules on every push/PR.
+
