@@ -7,7 +7,9 @@ import { EditorSidebar } from './components/EditorSidebar';
 import NavigationBar from './components/NavigationBar';
 import HeroImage from './components/HeroImage';
 import BlogPreview from './components/BlogPreview';
+import { AppMenuBar } from './components/AppMenuBar';
 import { useConfig } from './context/ConfigContext';
+import FileManager from './services/FileManager';
 
 export const BlogEditor: React.FC<BlogEditorProps> = ({
   initialPost,
@@ -17,6 +19,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   readOnly = false
 }) => {
   const { defaultHeroImage, categories = [] } = useConfig();
+  const fileManager = FileManager.getInstance();
   
   const [post, setPost] = useState<BlogPost>(initialPost || {
     id: crypto.randomUUID(),
@@ -36,6 +39,9 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
   const [backgroundColor, setBackgroundColor] = useState<string>(
     initialPost?.content.backgroundColor || '#333333'
   );
@@ -258,6 +264,83 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
     scrollToSection(sectionId);
   };
 
+  const handleNewBlog = () => {
+    setPost({
+      id: crypto.randomUUID(),
+      metadata: {
+        title: '',
+        author: '',
+        date: new Date().toISOString(),
+        category: '',
+        readTime: '',
+        featured: false,
+        status: 'draft'
+      },
+      content: {
+        sections: []
+      }
+    });
+    setHeroImage({
+      url: '',
+      alt: '',
+      position: { x: 50, y: 50 }
+    });
+    setBackgroundColor('#333333');
+  };
+
+  const handleOpenBlog = async (openedPost?: BlogPost) => {
+    try {
+      const post = openedPost || await fileManager.openBlog();
+      setPost(post);
+      setHeroImage({
+        url: post.content.featuredImage?.url || '',
+        alt: post.content.featuredImage?.alt || '',
+        position: post.content.featuredImage?.position || { x: 50, y: 50 }
+      });
+      setBackgroundColor(post.content.backgroundColor || '#333333');
+    } catch (error) {
+      console.error('Error opening blog:', error);
+    }
+  };
+
+  const handleSaveBlog = async () => {
+    try {
+      await fileManager.saveBlog(post);
+      saveDraft(); // Also save to localStorage
+    } catch (error) {
+      console.error('Error saving blog:', error);
+    }
+  };
+
+  const handleSaveAsBlog = async () => {
+    try {
+      await fileManager.saveBlogAs(post);
+    } catch (error) {
+      console.error('Error saving blog:', error);
+    }
+  };
+
+  const handleExportBlog = async () => {
+    try {
+      await fileManager.exportBlog(post);
+    } catch (error) {
+      console.error('Error exporting blog:', error);
+    }
+  };
+
+  const handleUndo = () => {
+    // TODO: Implement undo functionality
+  };
+
+  const handleRedo = () => {
+    // TODO: Implement redo functionality
+  };
+
+  const handleToggleTheme = () => {
+    setIsDarkTheme(!isDarkTheme);
+    // TODO: Implement theme toggle functionality
+  };
+
   const navigationItems = [
     {
       name: 'Title',
@@ -269,19 +352,6 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
       })),
       placeholder: 'Enter title...',
       minWidth: '200px',
-    },
-    {
-      name: 'Category',
-      type: 'select' as const,
-      value: post.metadata?.category || '',
-      onChange: (value: string) => setPost(prev => ({
-        ...prev,
-        metadata: { ...prev.metadata, category: value }
-      })),
-      options: categories,
-      placeholder: categories.length > 0 ? 'Select category...' : 'No categories available',
-      minWidth: '150px',
-      disabled: categories.length === 0,
     },
     {
       name: 'Author',
@@ -347,6 +417,23 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
 
   return (
     <div className={styles.blogEditor}>
+      <AppMenuBar
+        onNewBlog={handleNewBlog}
+        onOpenBlog={handleOpenBlog}
+        onSaveBlog={handleSaveBlog}
+        onSaveAsBlog={handleSaveAsBlog}
+        onExportBlog={handleExportBlog}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onTogglePreview={() => setIsPreviewMode(!isPreviewMode)}
+        onToggleTheme={handleToggleTheme}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        isSidebarVisible={!sidebarCollapsed}
+        isPreviewVisible={isPreviewMode}
+        isDarkTheme={isDarkTheme}
+      />
       {isPreviewMode ? (
         <BlogPreview 
           post={{

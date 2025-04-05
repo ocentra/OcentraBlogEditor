@@ -1,0 +1,96 @@
+.menuBar {
+  display: flex;
+  align-items: center;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  height: 28px;
+  padding: 0 8px;
+  user-select: none;
+}
+
+.menuItem {
+  position: relative;
+  height: 100%;
+}
+
+.menuButton {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  padding: 0 8px;
+  height: 100%;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menuButton:hover {
+  background-color: var(--hover-color);
+}
+
+.menuDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  min-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.menuDropdown button {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.menuDropdown button:hover {
+  background-color: var(--hover-color);
+}
+
+.menuDropdown button:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.menuDivider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 4px 0;
+}
+
+.recentFilesMenu {
+  padding: 4px 0;
+  max-width: 300px;
+  min-width: 200px;
+}
+
+.menuLabel {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  background-color: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Keyboard shortcuts */
+.menuDropdown button::after {
+  content: attr(data-shortcut);
+  float: right;
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-left: 16px;
+} 

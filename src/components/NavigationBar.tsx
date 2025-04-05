@@ -136,17 +136,21 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   // Add category selector if onCategoryChange is provided
   const items = React.useMemo(() => {
     if (onCategoryChange) {
+      const categoryItem = {
+        name: 'Category',
+        type: 'select' as const,
+        value: selectedCategory,
+        onChange: onCategoryChange,
+        options: categories,
+        placeholder: 'Select category...',
+        minWidth: '200px',
+      };
+      
+      // Insert category after the first item
       return [
-        {
-          name: 'Category',
-          type: 'select' as const,
-          value: selectedCategory,
-          onChange: onCategoryChange,
-          options: categories,
-          placeholder: 'Select category...',
-          minWidth: '200px',
-        },
-        ...propItems
+        ...propItems.slice(0, 1),
+        categoryItem,
+        ...propItems.slice(1)
       ];
     }
     return propItems;
@@ -158,13 +162,19 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [activeItemIndex, setActiveItemIndex] = useState<number>(-1);
+  const [contentAlignment, setContentAlignment] = useState<'center' | 'flex-start'>('center');
 
   const updateScrollState = useCallback(() => {
     if (navContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = navContainerRef.current;
-      setShowNavigationArrows(scrollWidth > clientWidth);
+      const hasOverflow = scrollWidth > clientWidth;
+      
+      setShowNavigationArrows(hasOverflow);
       setCanScrollLeft(scrollLeft > 0);
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth);
+      
+      // Update alignment based on available space
+      setContentAlignment(hasOverflow ? 'flex-start' : 'center');
     }
   }, []);
 
@@ -263,6 +273,20 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     }
   }, [handleWheel, handleScroll]);
 
+  // Helper function to calculate input width
+  const calculateInputWidth = useCallback((text: string, minWidth: string = '200px') => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.font = '14px sans-serif'; // Match the input's font
+      const textWidth = context.measureText(text || '').width;
+      const minWidthPx = parseInt(minWidth);
+      // Add padding and some extra space for comfortable typing
+      return Math.max(minWidthPx, textWidth + 32);
+    }
+    return parseInt(minWidth);
+  }, []);
+
   const renderFormItem = useCallback((item: NavigationItem, index: number) => {
     const isActive = index === activeItemIndex;
     const commonStyles = {
@@ -278,19 +302,30 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
 
     switch (item.type) {
       case 'input':
+        const inputWidth = calculateInputWidth(item.value || '', item.minWidth);
         return (
           <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <label style={{ color: 'white', whiteSpace: 'nowrap' }}>{item.name}:</label>
-            <input
-              type="text"
-              value={item.value}
-              onChange={(e) => item.onChange?.(e.target.value)}
-              placeholder={item.placeholder}
-              disabled={item.disabled}
-              style={commonStyles}
-              aria-label={item.ariaLabel || item.name}
-              onFocus={() => setActiveItemIndex(index)}
-            />
+            <div style={{ position: 'relative', flex: '1 1 auto', minWidth: item.minWidth || '200px', maxWidth: '600px' }}>
+              <input
+                type="text"
+                value={item.value}
+                onChange={(e) => {
+                  item.onChange?.(e.target.value);
+                  const target = e.target as HTMLInputElement;
+                  target.style.width = `${calculateInputWidth(e.target.value, item.minWidth)}px`;
+                }}
+                placeholder={item.placeholder}
+                disabled={item.disabled}
+                style={{
+                  ...commonStyles,
+                  width: `${inputWidth}px`,
+                  minWidth: item.minWidth || '200px',
+                }}
+                aria-label={item.ariaLabel || item.name}
+                onFocus={() => setActiveItemIndex(index)}
+              />
+            </div>
           </div>
         );
       case 'button':
@@ -320,13 +355,29 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
               value={item.value}
               onChange={(e) => item.onChange?.(e.target.value)}
               disabled={item.disabled}
-              style={commonStyles}
+              style={{
+                ...commonStyles,
+                backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                color: 'white',
+                appearance: 'none',
+                paddingRight: '24px', // Space for the custom arrow
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath fill='white' d='M0 2l4 4 4-4z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 8px center',
+                backgroundSize: '8px'
+              }}
               aria-label={item.ariaLabel || item.name}
               onFocus={() => setActiveItemIndex(index)}
             >
-              <option value="">{item.placeholder || `Select ${item.name.toLowerCase()}...`}</option>
-              {item.options?.map((option) => (
-                <option key={option} value={option}>
+              <option value="" style={{ backgroundColor: '#1a1a1a', color: 'white' }}>
+                {item.placeholder || `Select ${item.name.toLowerCase()}...`}
+              </option>
+              {item.options?.map((option, optionIndex) => (
+                <option 
+                  key={`${item.name}-${option}-${optionIndex}`} 
+                  value={option}
+                  style={{ backgroundColor: '#1a1a1a', color: 'white' }}
+                >
                   {option}
                 </option>
               ))}
@@ -450,31 +501,39 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     >
       <div className={styles.navBackground} />
       
-      <div className={`${styles.arrowContainer} ${styles.arrowContainerLeft}`}>
-        <button
-          className={`${styles.arrowButton} ${styles.arrowButtonLeft} ${!canScrollLeft ? styles.arrowButtonDisabled : ''}`}
-          onClick={() => scrollNav('left')}
-          disabled={!canScrollLeft}
-        >
-          ←
-        </button>
-      </div>
+      {showArrows && showNavigationArrows && (
+        <div className={`${styles.arrowContainer} ${styles.arrowContainerLeft}`}>
+          <button
+            className={`${styles.arrowButton} ${styles.arrowButtonLeft} ${!canScrollLeft ? styles.arrowButtonDisabled : ''}`}
+            onClick={() => scrollNav('left')}
+            disabled={!canScrollLeft}
+          >
+            ←
+          </button>
+        </div>
+      )}
 
-      <div className={styles.navContent} ref={navContainerRef}>
+      <div 
+        className={styles.navContent} 
+        ref={navContainerRef}
+        style={{ justifyContent: contentAlignment }}
+      >
         <div className={styles.navItems}>
           {items.map((item, index) => renderItem(item, index))}
         </div>
       </div>
 
-      <div className={`${styles.arrowContainer} ${styles.arrowContainerRight}`}>
-        <button
-          className={`${styles.arrowButton} ${styles.arrowButtonRight} ${!canScrollRight ? styles.arrowButtonDisabled : ''}`}
-          onClick={() => scrollNav('right')}
-          disabled={!canScrollRight}
-        >
-          →
-        </button>
-      </div>
+      {showArrows && showNavigationArrows && (
+        <div className={`${styles.arrowContainer} ${styles.arrowContainerRight}`}>
+          <button
+            className={`${styles.arrowButton} ${styles.arrowButtonRight} ${!canScrollRight ? styles.arrowButtonDisabled : ''}`}
+            onClick={() => scrollNav('right')}
+            disabled={!canScrollRight}
+          >
+            →
+          </button>
+        </div>
+      )}
 
       {onToggleExpand && (
         <button

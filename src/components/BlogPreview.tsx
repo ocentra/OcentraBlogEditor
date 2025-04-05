@@ -156,6 +156,67 @@ export const BlogPreview: React.FC<BlogPreviewProps> = ({
     alert('Embed code copied to clipboard!');
   };
 
+  const handleOpenInNewWindow = () => {
+    const previewWindow = window.open('', '_blank');
+    if (previewWindow) {
+      previewWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${post.metadata?.title || 'Blog Preview'}</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+              }
+            </style>
+          </head>
+          <body>
+            <div id="preview-root"></div>
+            <script>
+              window.addEventListener('load', function() {
+                const root = document.getElementById('preview-root');
+                const preview = ${JSON.stringify(post)};
+                const backgroundColor = '${backgroundColor}';
+                const textColor = '${textColor}';
+                const linkColor = '${linkColor}';
+                
+                // Render the preview content
+                root.innerHTML = \`
+                  <div style="background-color: \${backgroundColor}; color: \${textColor}; padding: 20px;">
+                    \${preview.content.sections.map(section => {
+                      if (section.type === 'text') {
+                        return \`<div style="margin-bottom: 20px;">\${section.content}</div>\`;
+                      } else if (section.type === 'code') {
+                        return \`<pre style="background: #2a2a2a; padding: 1rem; border-radius: 4px; overflow-x: auto;"><code>\${section.content}</code></pre>\`;
+                      } else if (section.type === 'quote') {
+                        return \`<blockquote style="border-left: 4px solid \${linkColor}; padding-left: 1rem; margin: 1.5rem 0; font-style: italic;">\${section.content}</blockquote>\`;
+                      } else if (section.type === 'image' && section.metadata?.image) {
+                        return \`
+                          <figure style="margin: 1.5rem 0;">
+                            <img src="\${section.metadata.image.url}" alt="\${section.metadata.image.alt || ''}" style="max-width: 100%; height: auto;">
+                            \${section.metadata.image.caption ? \`<figcaption style="text-align: center; font-style: italic;">\${section.metadata.image.caption}</figcaption>\` : ''}
+                          </figure>
+                        \`;
+                      }
+                      return '';
+                    }).join('')}
+                  </div>
+                \`;
+                
+                // Add link styles
+                const style = document.createElement('style');
+                style.textContent = \`a { color: \${linkColor}; }\`;
+                document.head.appendChild(style);
+              });
+            </script>
+          </body>
+        </html>
+      `);
+    }
+  };
+
   const isFullscreen = containerClassName === 'blog-preview-fullscreen';
 
   return (
@@ -180,6 +241,14 @@ export const BlogPreview: React.FC<BlogPreviewProps> = ({
                 style={{ color: textColor }}
               >
                 <span className={styles.buttonIcon}>📋</span> Embed
+              </button>
+              <button 
+                className={styles.previewControlButton} 
+                onClick={handleOpenInNewWindow}
+                title="Open in new window"
+                style={{ color: textColor }}
+              >
+                <span className={styles.buttonIcon}>↗️</span> New Window
               </button>
               {onClose && (
                 <button 
