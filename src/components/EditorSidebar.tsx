@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, KeyboardEvent } from 'react';
-import { BlogSection } from '../types/index';
-import '../styles/components/EditorSidebar.css';
+import { BlogSection } from '../types/interfaces';
+import styles from '../styles/components/EditorSidebar.module.css';
 
 interface EditorSidebarProps {
   sections: BlogSection[];
@@ -39,7 +39,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
   const handleDragStart = (index: number) => {
     setDraggedSection(index);
-    sectionRefs.current[index]?.classList.add('dragging');
+    sectionRefs.current[index]?.classList.add(styles.dragging);
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
@@ -57,7 +57,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
 
   const handleDragEnd = () => {
     if (draggedSection !== null) {
-      sectionRefs.current[draggedSection]?.classList.remove('dragging');
+      sectionRefs.current[draggedSection]?.classList.remove(styles.dragging);
     }
     if (draggedSection !== null && dragOverSection !== null && draggedSection !== dragOverSection) {
       onSectionReorder(draggedSection, dragOverSection);
@@ -154,36 +154,36 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
   // Add a visual indicator for the drop position
   const renderDropIndicator = (index: number) => {
     if (dragOverSection === index) {
-      return <div className="dropIndicator" />;
+      return <div className={styles.dropIndicator} />;
     }
     return null;
   };
 
   return (
     <div 
-      className={`editorSidebar ${isCollapsed ? 'editorSidebarCollapsed' : ''}`}
+      className={`${styles.editorSidebar} ${isCollapsed ? styles.editorSidebarCollapsed : ''}`}
       role="complementary"
       aria-label="Document sections"
     >
       <button 
-        className={`sidebarToggle ${isCollapsed ? 'sidebarToggleCollapsed' : ''}`}
+        className={`${styles.sidebarToggle} ${isCollapsed ? styles.sidebarToggleCollapsed : ''}`}
         onClick={onToggleCollapse}
         title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         aria-expanded={!isCollapsed}
       >
-        <span className="visuallyHidden">
+        <span className={styles.visuallyHidden}>
           {isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         </span>
       </button>
       
-      <div className={`sidebarContent ${isCollapsed ? 'sidebarContentCollapsed' : ''}`}>
-        <div className="documentTree" role="tree">
-          <h3 className="documentTreeTitle">Document Sections</h3>
+      <div className={`${styles.sidebarContent} ${isCollapsed ? styles.sidebarContentCollapsed : ''}`}>
+        <div className={styles.documentTree} role="tree">
+          <h3 className={styles.documentTreeTitle}>Document Sections</h3>
           
-          <div className="sectionsList" role="group" aria-label="Document sections">
+          <div className={styles.sectionsList} role="group" aria-label="Document sections">
             {/* Hero Image Section */}
             <div
-              className={`documentSection ${activeSection === 'hero' ? 'documentSectionActive' : ''}`}
+              className={`${styles.documentSection} ${activeSection === 'hero' ? styles.documentSectionActive : ''}`}
               onClick={() => onSectionSelect('hero')}
               onDoubleClick={() => onSectionSelect('hero')}
               onMouseEnter={() => setHoveredSection('hero')}
@@ -192,9 +192,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
               role="treeitem"
               aria-selected={activeSection === 'hero'}
             >
-              <span className="dragHandle" aria-hidden="true">⋮⋮</span>
-              <div className="sectionTitleContainer">
-                <span className="sectionTitle">
+              <span className={styles.dragHandle} aria-hidden="true">⋮⋮</span>
+              <div className={styles.sectionTitleContainer}>
+                <span className={styles.sectionTitle}>
                   {hasHeroImage ? 'Hero Image' : 'Add Hero Image'}
                 </span>
               </div>
@@ -206,7 +206,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                 {renderDropIndicator(index)}
                 <div
                   ref={el => sectionRefs.current[index] = el}
-                  className={`documentSection ${activeSection === section.id ? 'documentSectionActive' : ''}`}
+                  className={`${styles.documentSection} ${activeSection === section.id ? styles.documentSectionActive : ''}`}
                   onClick={() => onSectionSelect(section.id)}
                   onDoubleClick={() => handleTitleEdit(section.id, section.metadata?.title || 'Untitled Section')}
                   onKeyDown={(e) => handleKeyDown(e, index)}
@@ -220,8 +220,8 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   role="treeitem"
                   aria-selected={activeSection === section.id}
                 >
-                  <span className="dragHandle" aria-hidden="true">⋮⋮</span>
-                  <div className="sectionTitleContainer">
+                  <span className={styles.dragHandle} aria-hidden="true">⋮⋮</span>
+                  <div className={styles.sectionTitleContainer}>
                     {editingTitle === section.id ? (
                       <input
                         type="text"
@@ -229,17 +229,17 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                         onChange={(e) => setEditedTitle(e.target.value)}
                         onKeyDown={(e) => handleTitleKeyDown(e, section.id)}
                         onBlur={() => handleTitleSave(section.id)}
-                        className="sectionTitleInput"
+                        className={styles.sectionTitleInput}
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
                       <>
-                        <span className="sectionTitle">
+                        <span className={styles.sectionTitle}>
                           {section.metadata?.title || 'Untitled Section'}
                         </span>
                         <button 
-                          className="editSectionBtn"
+                          className={styles.editSectionBtn}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleTitleEdit(section.id, section.metadata?.title || 'Untitled Section');
@@ -254,7 +254,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                     )}
                   </div>
                   <button 
-                    className="deleteSectionBtn"
+                    className={styles.deleteSectionBtn}
                     onClick={(e) => {
                       e.stopPropagation();
                       onSectionDelete(section.id);
@@ -270,9 +270,9 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
             ))}
           </div>
 
-          <div className="addSectionContainer">
+          <div className={styles.addSectionContainer}>
             {isAddingSection ? (
-              <div className="newSectionForm">
+              <div className={styles.newSectionForm}>
                 <input
                   ref={newSectionInputRef}
                   type="text"
@@ -280,11 +280,11 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
                   onChange={(e) => setNewSectionTitle(e.target.value)}
                   onKeyDown={handleAddSectionKeyDown}
                   placeholder="New section title..."
-                  className="newSectionInput"
+                  className={styles.newSectionInput}
                   aria-label="New section title"
                 />
                 <button
-                  className={`newSectionBtn ${!newSectionTitle.trim() ? 'newSectionBtnDisabled' : ''}`}
+                  className={`${styles.newSectionBtn} ${!newSectionTitle.trim() ? styles.newSectionBtnDisabled : ''}`}
                   onClick={handleAddSection}
                   disabled={!newSectionTitle.trim()}
                   aria-label="Add section"
@@ -294,7 +294,7 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = ({
               </div>
             ) : (
               <button
-                className="addSectionBtn"
+                className={styles.addSectionBtn}
                 onClick={() => setIsAddingSection(true)}
                 aria-label="Add new section"
               >

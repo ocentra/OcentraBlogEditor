@@ -55,6 +55,4 @@ export interface BlogEditorProps {
   onPublish?: (post: BlogPost) => void;
   onDraft?: (post: BlogPost) => void;
   readOnly?: boolean;
-  previewMode?: boolean;
-  previewBackground?: string;
 } 

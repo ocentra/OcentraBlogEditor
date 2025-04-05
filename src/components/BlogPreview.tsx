@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BlogPost } from '../types/interfaces';
-import '../styles/components/BlogPreview.css';
+import styles from '../styles/components/BlogPreview.module.css';
 
 interface BlogPreviewProps {
   post: BlogPost;
@@ -159,31 +159,31 @@ export const BlogPreview: React.FC<BlogPreviewProps> = ({
   const isFullscreen = containerClassName === 'blog-preview-fullscreen';
 
   return (
-    <div className={`${containerClassName} ${isVisible ? 'preview-visible' : 'preview-hidden'}`}>
-      <div className="preview-mode" style={{ backgroundColor }}>
+    <div className={`${containerClassName} ${isVisible ? styles.previewVisible : styles.previewHidden}`}>
+      <div className={styles.previewMode} style={{ backgroundColor }}>
         {/* Preview Controls */}
         {showControls && (
-          <div className="preview-header">
-            <div className="preview-controls">
+          <div className={styles.previewHeader}>
+            <div className={styles.previewControls}>
               <button 
-                className="preview-control-button" 
+                className={styles.previewControlButton} 
                 onClick={handleExportHTML}
                 title="Export as HTML"
                 style={{ color: textColor }}
               >
-                <span className="button-icon">💾</span> Export
+                <span className={styles.buttonIcon}>💾</span> Export
               </button>
               <button 
-                className="preview-control-button" 
+                className={styles.previewControlButton} 
                 onClick={handleCopyEmbedCode}
                 title="Copy embed code"
                 style={{ color: textColor }}
               >
-                <span className="button-icon">📋</span> Embed
+                <span className={styles.buttonIcon}>📋</span> Embed
               </button>
               {onClose && (
                 <button 
-                  className="preview-close-button"
+                  className={styles.previewCloseButton}
                   onClick={handleClose}
                   aria-label="Exit preview"
                   style={{ color: textColor }}
@@ -196,7 +196,7 @@ export const BlogPreview: React.FC<BlogPreviewProps> = ({
         )}
 
         {/* Blog Preview Content */}
-        <article className="blog-preview" style={{ color: textColor }}>
+        <article className={styles.blogPreview} style={{ color: textColor }}>
           <meta property="og:title" content={post.metadata?.title || 'Untitled'} />
           <meta property="og:description" content={post.content.sections[0]?.content || ''} />
           {post.content.featuredImage?.url && (
@@ -204,64 +204,64 @@ export const BlogPreview: React.FC<BlogPreviewProps> = ({
           )}
           <meta property="og:type" content="article" />
           
-          <div className="hero-image-container">
+          <div className={styles.heroImageContainer}>
             {post.content.featuredImage?.url ? (
-              <div className="hero-image-wrapper">
+              <div className={styles.heroImageWrapper}>
                 <img 
                   src={post.content.featuredImage.url} 
                   alt={post.content.featuredImage.alt} 
-                  className="hero-image"
+                  className={styles.heroImage}
                   style={{
                     objectPosition: `${post.content.featuredImage.position?.x || 50}% ${post.content.featuredImage.position?.y || 50}%`
                   }}
                 />
               </div>
             ) : (
-              <div className="hero-image-placeholder" />
+              <div className={styles.heroImagePlaceholder} />
             )}
           </div>
 
-          <div className="blog-preview-header">
-            <h1 className="blog-preview-title">{post.metadata?.title || 'Untitled'}</h1>
-            <div className="blog-preview-meta">
-              <span className="blog-preview-category">{post.metadata?.category || 'Uncategorized'}</span>
-              <span className="separator">|</span>
-              <span className="blog-preview-author">{post.metadata?.author || 'Anonymous'}</span>
-              <span className="separator">|</span>
-              <span className="blog-preview-read-time">{post.metadata?.readTime || '5 min read'}</span>
-              <span className="separator">|</span>
-              <span className="blog-preview-date">{new Date(post.metadata?.date || new Date()).toLocaleDateString()}</span>
+          <div className={styles.blogPreviewHeader}>
+            <h1 className={styles.blogPreviewTitle}>{post.metadata?.title || 'Untitled'}</h1>
+            <div className={styles.blogPreviewMeta}>
+              <span className={styles.blogPreviewCategory}>{post.metadata?.category || 'Uncategorized'}</span>
+              <span className={styles.separator}>|</span>
+              <span className={styles.blogPreviewAuthor}>{post.metadata?.author || 'Anonymous'}</span>
+              <span className={styles.separator}>|</span>
+              <span className={styles.blogPreviewReadTime}>{post.metadata?.readTime || '5 min read'}</span>
+              <span className={styles.separator}>|</span>
+              <span className={styles.blogPreviewDate}>{new Date(post.metadata?.date || new Date()).toLocaleDateString()}</span>
             </div>
           </div>
 
-          <div className="blog-preview-content">
+          <div className={styles.blogPreviewContent}>
             {post.content.sections.map(section => (
-              <div key={section.id} className="preview-section">
+              <div key={section.id} className={styles.previewSection}>
                 {section.type === 'text' && (
                   <div 
-                    className="preview-text-content rich-text-preview"
+                    className={styles.previewTextContent}
                     dangerouslySetInnerHTML={{ __html: section.content }} 
                   />
                 )}
                 {section.type === 'code' && (
-                  <pre className="preview-code-block">
+                  <pre className={styles.previewCodeBlock}>
                     <code>{section.content}</code>
                   </pre>
                 )}
                 {section.type === 'quote' && (
-                  <blockquote className="preview-quote">
+                  <blockquote className={styles.previewQuote}>
                     {section.content}
                   </blockquote>
                 )}
                 {section.type === 'image' && section.metadata?.image && (
-                  <figure className="preview-image-container">
+                  <figure className={styles.previewImageContainer}>
                     <img 
                       src={section.metadata.image.url} 
                       alt={section.metadata.image.alt} 
-                      className="preview-image"
+                      className={styles.previewImage}
                     />
                     {section.metadata.image.caption && (
-                      <figcaption className="preview-image-caption">
+                      <figcaption className={styles.previewImageCaption}>
                         {section.metadata.image.caption}
                       </figcaption>
                     )}

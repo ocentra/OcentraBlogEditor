@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useConfig } from '../context/ConfigContext';
 import { icons as defaultIcons } from '../assets';
+import styles from '../styles/components/HeroImage.module.css';
 
 interface HeroImageProps {
   imageUrl: string;
@@ -253,158 +254,12 @@ const HeroImage: React.FC<HeroImageProps> = ({
   }, [isZooming]);
 
   const hasValidImage = imageUrl && !imageError && !isImageLoading;
-
   const showToolbar = (isActive || isHovered) && !readOnly && !isEditingAlt && hasValidImage;
   const showPlaceholder = !hasValidImage && !readOnly;
 
-  const styles = {
-    container: {
-      position: 'relative' as const,
-      width: '100%',
-      height: '400px',
-      backgroundColor: 'transparent',
-      borderRadius: '8px',
-      overflow: 'hidden',
-      marginBottom: '16px',
-      border: isActive ? '2px solid #007bff' : '1px solid rgba(255, 255, 255, 0.1)',
-    },
-    wrapper: {
-      position: 'relative' as const,
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'transparent',
-    },
-    zoomContainer: {
-      width: '100%',
-      height: '100%',
-      overflow: 'hidden',
-      transition: 'transform 0.2s ease',
-      backgroundColor: 'transparent',
-    },
-    image: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover' as const,
-      transition: 'object-position 0.2s ease',
-      backgroundColor: 'transparent',
-    },
-    toolbar: {
-      position: 'absolute' as const,
-      bottom: '16px',
-      left: '16px',
-      right: '16px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      background: 'rgba(0, 0, 0, 0.7)',
-      padding: '8px',
-      borderRadius: '4px',
-      opacity: isHovered ? 1 : 0,
-      transition: 'opacity 0.2s ease',
-    },
-    zoomControls: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-    },
-    zoomButton: {
-      background: 'transparent',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
-      color: 'white',
-      width: '24px',
-      height: '24px',
-      borderRadius: '4px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      fontSize: '16px',
-      transition: 'all 0.2s ease',
-    },
-    zoomButtonHover: {
-      background: 'rgba(255, 255, 255, 0.1)',
-      borderColor: 'rgba(255, 255, 255, 0.5)',
-    },
-    zoomButtonDisabled: {
-      opacity: 0.5,
-      cursor: 'not-allowed',
-    },
-    zoomValue: {
-      color: 'white',
-      fontSize: '14px',
-      minWidth: '40px',
-      textAlign: 'center' as const,
-    },
-    placeholder: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: '100%',
-      backgroundColor: 'rgba(2, 6, 23, 0.1)',
-      border: '2px dashed rgba(255, 255, 255, 0.1)',
-      borderRadius: '8px',
-    },
-    placeholderContent: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'center',
-      gap: '12px',
-    },
-    placeholderIcon: {
-      width: '48px',
-      height: '48px',
-      opacity: 0.7,
-    },
-    placeholderSubtitle: {
-      color: 'rgba(255, 255, 255, 0.7)',
-      fontSize: '14px',
-      marginTop: '8px',
-    },
-    addButton: {
-      padding: '10px 20px',
-      backgroundColor: '#007bff',
-      color: 'white',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      transition: 'background-color 0.2s ease',
-    },
-    addButtonHover: {
-      backgroundColor: '#0056b3',
-    },
-    altEdit: {
-      position: 'absolute' as const,
-      bottom: '-40px',
-      left: 0,
-      right: 0,
-      padding: '8px',
-      background: 'white',
-      border: '1px solid #ccc',
-      borderRadius: '4px',
-      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    },
-    altInput: {
-      width: '100%',
-      padding: '4px 8px',
-      border: '1px solid #ccc',
-      borderRadius: '4px',
-      fontSize: '14px',
-    },
-    altInputFocus: {
-      outline: 'none',
-      borderColor: '#007bff',
-    },
-  };
-
   return (
     <div 
-      style={styles.container}
+      className={`${styles.container} ${isActive ? styles.containerActive : ''}`}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -418,7 +273,7 @@ const HeroImage: React.FC<HeroImageProps> = ({
       />
       <div
         ref={imageWrapperRef}
-        style={styles.wrapper}
+        className={styles.wrapper}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onWheel={handleWheel}
@@ -426,8 +281,8 @@ const HeroImage: React.FC<HeroImageProps> = ({
         {imageUrl && !imageError && !isImageLoading ? (
           <>
             <div
+              className={styles.zoomContainer}
               style={{
-                ...styles.zoomContainer,
                 transform: `scale(${imageZoom / 100})`,
                 transformOrigin: 'center center'
               }}
@@ -435,8 +290,8 @@ const HeroImage: React.FC<HeroImageProps> = ({
               <img
                 src={imageUrl}
                 alt={alt}
+                className={styles.image}
                 style={{
-                  ...styles.image,
                   objectPosition: `${imagePosition.x}% ${imagePosition.y}%`
                 }}
                 onMouseDown={handleMouseDown}
@@ -444,13 +299,10 @@ const HeroImage: React.FC<HeroImageProps> = ({
               />
             </div>
             {!readOnly && (
-              <div style={styles.toolbar}>
-                <div style={styles.zoomControls}>
+              <div className={`${styles.toolbar} ${showToolbar ? styles.toolbarVisible : ''}`}>
+                <div className={styles.zoomControls}>
                   <button
-                    style={{
-                      ...styles.zoomButton,
-                      ...(imageZoom <= 50 ? styles.zoomButtonDisabled : {})
-                    }}
+                    className={`${styles.zoomButton} ${imageZoom <= 50 ? styles.zoomButtonDisabled : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleZoom(-5);
@@ -459,14 +311,11 @@ const HeroImage: React.FC<HeroImageProps> = ({
                   >
                     -
                   </button>
-                  <span style={styles.zoomValue}>
+                  <span className={styles.zoomValue}>
                     {imageZoom}%
                   </span>
                   <button
-                    style={{
-                      ...styles.zoomButton,
-                      ...(imageZoom >= 200 ? styles.zoomButtonDisabled : {})
-                    }}
+                    className={`${styles.zoomButton} ${imageZoom >= 200 ? styles.zoomButtonDisabled : ''}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleZoom(5);
@@ -477,7 +326,7 @@ const HeroImage: React.FC<HeroImageProps> = ({
                   </button>
                 </div>
                 <button
-                  style={styles.zoomButton}
+                  className={styles.zoomButton}
                   onClick={handleEditAltClick}
                 >
                   Edit Alt Text
@@ -486,16 +335,16 @@ const HeroImage: React.FC<HeroImageProps> = ({
             )}
           </>
         ) : (
-          <div style={styles.placeholder}>
-            <div style={styles.placeholderContent}>
-              <img src={icons.camera} alt="" style={styles.placeholderIcon} />
+          <div className={styles.placeholder}>
+            <div className={styles.placeholderContent}>
+              <img src={icons.camera} alt="" className={styles.placeholderIcon} />
               <button 
-                style={styles.addButton}
+                className={styles.addButton}
                 onClick={handleReplaceClick}
               >
                 Add Cover Image
               </button>
-              <span style={styles.placeholderSubtitle}>
+              <span className={styles.placeholderSubtitle}>
                 Recommended size: 1200x600px
               </span>
             </div>
@@ -503,7 +352,7 @@ const HeroImage: React.FC<HeroImageProps> = ({
         )}
       </div>
       {isEditingAlt && (
-        <div style={styles.altEdit}>
+        <div className={styles.altEdit}>
           <input
             type="text"
             value={tempAlt}
@@ -518,7 +367,7 @@ const HeroImage: React.FC<HeroImageProps> = ({
                 handleCancelAltClick(e as any);
               }
             }}
-            style={styles.altInput}
+            className={styles.altInput}
           />
         </div>
       )}

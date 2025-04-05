@@ -1,0 +1,172 @@
+.navContainer {
+  position: relative;
+  width: 100%;
+  height: var(--nav-height, 48px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  transition: all 0.3s ease;
+}
+
+.navContainerExpanded {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.navContainerCollapsed {
+  opacity: 0.8;
+  transform: translateY(-10px);
+}
+
+.navBackground {
+  position: absolute;
+  top: 0;
+  left: var(--nav-background-left, 42px);
+  right: var(--nav-background-right, 42px);
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.arrowContainer {
+  height: var(--arrow-height, 32px);
+  width: var(--arrow-width, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.arrowContainerLeft {
+  left: 0;
+}
+
+.arrowContainerRight {
+  right: 0;
+}
+
+.navContent {
+  height: 100%;
+  width: var(--nav-content-width, calc(100% - 84px));
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  justify-content: var(--nav-content-justify, flex-start);
+  position: relative;
+  z-index: 1;
+  scroll-behavior: smooth;
+  padding: var(--nav-content-padding, 0 10px);
+}
+
+.navContent::-webkit-scrollbar {
+  display: none;
+}
+
+.navItems {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  gap: var(--nav-item-gap, 8px);
+  padding: 0 5px;
+  flex-wrap: nowrap;
+  width: max-content;
+}
+
+.commonButton {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+}
+
+.commonButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.commonButtonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.commonInput {
+  background-color: rgba(0, 0, 0, 0.2);
+  cursor: text;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.arrowButton {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.arrowButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.arrowButtonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.arrowButtonLeft {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.arrowButtonRight {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.toggleButton {
+  position: absolute;
+  right: -40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+} 

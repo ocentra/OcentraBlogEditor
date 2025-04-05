@@ -1,4 +1,4 @@
-import { BlogPost } from '../types/index';
+import { BlogPost } from '../types/interfaces';
 
 export interface BlogPostSummary {
   id: string;

@@ -1,5 +1,5 @@
 import './styles/base/index.css';
-import './styles/editor/BlogEditor.css';
+import styles from './styles/editor/BlogEditor.module.css';
 import React, { useState, useRef, useEffect } from 'react';
 import { BlogPost, BlogEditorProps } from './types/interfaces';
 import Section from './components/Section';
@@ -14,9 +14,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   onSave,
   onPublish,
   onDraft,
-  readOnly = false,
-  previewMode = false,
-  previewBackground = '#ffffff'
+  readOnly = false
 }) => {
   const { defaultHeroImage, categories = [] } = useConfig();
   
@@ -92,7 +90,15 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
           status: 'draft'
         }
       };
+
+      // Save to localStorage for quick recovery
       localStorage.setItem('blogDraft', JSON.stringify(currentPost));
+      
+      // Call onSave to update the JSON file
+      if (onSave) {
+        onSave(currentPost);
+      }
+      
       console.log('Auto-saved at:', new Date().toLocaleTimeString());
     };
 
@@ -102,7 +108,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
         clearInterval(autoSaveTimerRef.current);
       }
     };
-  }, [post, heroImage, backgroundColor]);
+  }, [post, heroImage, backgroundColor, onSave]);
 
   const updateSection = (id: string, content: string) => {
     setPost(prev => ({
@@ -202,15 +208,6 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
 
   const togglePreview = () => {
     setIsPreviewMode(prev => !prev);
-  };
-
-  const scrollToHeroImage = () => {
-    if (editorContentRef.current) {
-      editorContentRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    }
   };
 
   const handleSectionReorder = (fromIndex: number, toIndex: number) => {
@@ -349,7 +346,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   ];
 
   return (
-    <div className="blog-editor">
+    <div className={styles.blogEditor}>
       {isPreviewMode ? (
         <BlogPreview 
           post={{
@@ -360,15 +357,16 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
                 url: heroImage.url,
                 alt: heroImage.alt,
                 position: heroImage.position
-              } : undefined
+              } : undefined,
+              backgroundColor
             }
           }}
           backgroundColor={backgroundColor}
           onClose={togglePreview}
-          containerClassName="blog-preview-fullscreen"
+          containerClassName={styles.previewFullscreen}
         />
       ) : (
-        <div className="editor-container">
+        <div className={styles.editorContainer}>
           <NavigationBar
             items={navigationItems}
             height={40}
@@ -383,7 +381,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
               metadata: { ...prev.metadata, category }
             }))}
           />
-          <div className="editor-main">
+          <div className={styles.editorMain}>
             <EditorSidebar
               sections={post.content.sections}
               activeSection={activeSection}
@@ -416,7 +414,11 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
               }}
             />
 
-            <div className="editor-content" ref={editorContentRef} style={{ backgroundColor }}>
+            <div 
+              className={styles.editorContent} 
+              ref={editorContentRef} 
+              style={{ backgroundColor }}
+            >
               <div ref={el => sectionRefs.current['hero'] = el}>
                 <HeroImage
                   imageUrl={heroImage.url}
@@ -443,6 +445,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
                     onUpdate={(content) => updateSection(section.id, content)}
                     onTypeChange={(type) => updateSectionMeta(section.id, { language: type })}
                     onTitleChange={(title) => updateSectionMeta(section.id, { title })}
+                    readOnly={readOnly}
                   />
                 </div>
               ))}

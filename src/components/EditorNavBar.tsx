@@ -1,6 +1,6 @@
 import React from 'react';
 import { FaArrowLeft, FaSave } from 'react-icons/fa';
-import '../styles/components/EditorNavBar.css';
+import styles from '../styles/components/EditorNavBar.module.css';
 
 interface EditorNavBarProps {
   onBack: () => void;
@@ -16,31 +16,31 @@ const EditorNavBar: React.FC<EditorNavBarProps> = ({
   onPublish,
 }) => {
   return (
-    <div className="editorNav">
-      <div className="navLeft">
+    <div className={styles.editorNav}>
+      <div className={styles.navLeft}>
         <button 
           onClick={onBack} 
-          className="navBtn navBtnBack"
+          className={`${styles.navBtn} ${styles.navBtnBack}`}
           onMouseEnter={(e) => {
-            e.currentTarget.classList.add('hover');
+            e.currentTarget.classList.add(styles.hover);
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.classList.remove('hover');
+            e.currentTarget.classList.remove(styles.hover);
           }}
         >
           <FaArrowLeft /> Back
         </button>
       </div>
-      <div className="navRight">
+      <div className={styles.navRight}>
         {onSave && (
           <button 
             onClick={onSave} 
-            className="navBtn navBtnSave"
+            className={`${styles.navBtn} ${styles.navBtnSave}`}
             onMouseEnter={(e) => {
-              e.currentTarget.classList.add('hover');
+              e.currentTarget.classList.add(styles.hover);
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.classList.remove('hover');
+              e.currentTarget.classList.remove(styles.hover);
             }}
           >
             <FaSave /> Save Draft
@@ -49,12 +49,12 @@ const EditorNavBar: React.FC<EditorNavBarProps> = ({
         {onPreview && (
           <button 
             onClick={onPreview} 
-            className="navBtn navBtnPreview"
+            className={`${styles.navBtn} ${styles.navBtnPreview}`}
             onMouseEnter={(e) => {
-              e.currentTarget.classList.add('hover');
+              e.currentTarget.classList.add(styles.hover);
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.classList.remove('hover');
+              e.currentTarget.classList.remove(styles.hover);
             }}
           >
             Preview
@@ -63,12 +63,12 @@ const EditorNavBar: React.FC<EditorNavBarProps> = ({
         {onPublish && (
           <button 
             onClick={onPublish} 
-            className="navBtn navBtnPublish"
+            className={`${styles.navBtn} ${styles.navBtnPublish}`}
             onMouseEnter={(e) => {
-              e.currentTarget.classList.add('hover');
+              e.currentTarget.classList.add(styles.hover);
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.classList.remove('hover');
+              e.currentTarget.classList.remove(styles.hover);
             }}
           >
             Publish

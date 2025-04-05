@@ -1,53 +1,33 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
-import { BlogPost, BlogContextType } from '../types/index';
+import { createContext, useContext, useState } from 'react';
+import { BlogPost, BlogContextType } from '../types/interfaces';
 
 export const BlogContext = createContext<BlogContextType | undefined>(undefined);
 
-// Blog management functions
-export const addPost = (post: Omit<BlogPost, 'id'>) => {
-  const newPost: BlogPost = {
-    ...post,
-    id: Date.now().toString(),
-    metadata: {
-      ...post.metadata,
-      date: new Date().toISOString().split('T')[0]
-    }
-  };
-  return newPost;
-};
-
-export const updatePost = (currentPost: BlogPost, updatedFields: Partial<BlogPost>): BlogPost => {
-  return { ...currentPost, ...updatedFields };
-};
-
-export const deletePost = (posts: BlogPost[], id: string): BlogPost[] => {
-  return posts.filter(post => post.id !== id);
-};
-
-export const getPost = (posts: BlogPost[], id: string): BlogPost | undefined => {
-  return posts.find(post => post.id === id);
-};
-
-export function BlogProvider({ children }: { children: ReactNode }) {
+export const BlogProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
 
-  const contextValue: BlogContextType = {
+  const value: BlogContextType = {
     posts,
-    addPost: (post) => setPosts(prev => [...prev, addPost(post)]),
-    updatePost: (id, updatedFields) => 
+    addPost: (post: Omit<BlogPost, 'id'>) => {
+      const newPost: BlogPost = {
+        ...post,
+        id: crypto.randomUUID()
+      };
+      setPosts(prev => [...prev, newPost]);
+    },
+    updatePost: (id: string, updatedFields: Partial<BlogPost>) => {
       setPosts(prev => prev.map(post => 
-        post.id === id ? updatePost(post, updatedFields) : post
-      )),
-    deletePost: (id) => setPosts(prev => deletePost(prev, id)),
-    getPost: (id) => getPost(posts, id)
+        post.id === id ? { ...post, ...updatedFields } : post
+      ));
+    },
+    deletePost: (id: string) => {
+      setPosts(prev => prev.filter(post => post.id !== id));
+    },
+    getPost: (id: string) => posts.find(post => post.id === id)
   };
 
-  return (
-    <BlogContext.Provider value={contextValue}>
-      {children}
-    </BlogContext.Provider>
-  );
-}
+  return <BlogContext.Provider value={value}>{children}</BlogContext.Provider>;
+};
 
 export function useBlog() {
   const context = useContext(BlogContext);

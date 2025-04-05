@@ -1,5 +1,5 @@
 import { StorageAdapter, BlogPostSummary } from './StorageAdapter';
-import { BlogPost } from '../types/index';
+import { BlogPost } from '../types/interfaces';
 import { validateAndConvertBlogPost, validateBlogPost, ValidationError } from '../utils/typeValidator';
 
 interface GitHubConfig {

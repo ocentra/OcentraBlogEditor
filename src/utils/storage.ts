@@ -1,4 +1,4 @@
-import type { BlogPost as BlogData } from '../types/index';
+import type { BlogPost as BlogData } from '../types/interfaces';
 
 const STORAGE_KEY = 'blog_editor_draft';
 

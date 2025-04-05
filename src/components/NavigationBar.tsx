@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect, KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useConfig } from '../context/ConfigContext';
+import styles from '../styles/components/NavigationBar.module.css';
 
 // Navigation spacing constants
 const DEFAULT_NAV_ITEM_GAP = 8; // Default gap between navigation items
@@ -38,6 +39,7 @@ interface NavigationBarProps {
   onToggleExpand?: () => void;
   onCategoryChange?: (category: string) => void;
   selectedCategory?: string;
+  style?: React.CSSProperties;
 }
 
 const commonButtonStyles: React.CSSProperties = {
@@ -103,11 +105,7 @@ const ArrowButton: React.FC<{
   disabled?: boolean;
 }> = ({ direction, onClick, ariaLabel, disabled }) => (
   <button
-    style={{
-      ...arrowButtonStyles.base,
-      ...(direction === 'left' ? arrowButtonStyles.left : arrowButtonStyles.right),
-      ...(disabled && { opacity: 0.5, cursor: 'not-allowed', backgroundColor: 'rgba(255, 255, 255, 0.05)' })
-    }}
+    className={`${styles.arrowButton} ${direction === 'left' ? styles.arrowButtonLeft : styles.arrowButtonRight} ${disabled ? styles.arrowButtonDisabled : ''}`}
     onClick={onClick}
     disabled={disabled}
     aria-label={ariaLabel}
@@ -131,6 +129,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
   onToggleExpand,
   onCategoryChange,
   selectedCategory = '',
+  style
 }) => {
   const { categories = [] } = useConfig();
   
@@ -446,160 +445,43 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
 
   return (
     <div
-      style={{
-        position: 'relative',
-        width: '100%',
-        height,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 10px',
-        transition: 'all 0.3s ease',
-        ...(isExpanded ? {
-          opacity: 1,
-          transform: 'translateY(0)',
-        } : {
-          opacity: 0.8,
-          transform: 'translateY(-10px)',
-        })
-      }}
-      role="navigation"
-      aria-label={ariaLabel}
+      className={`${styles.navContainer} ${isExpanded ? styles.navContainerExpanded : styles.navContainerCollapsed}`}
+      style={style}
     >
-      {/* Nav Background */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: variant === 'form' ? '42px' : `${height + 10}px`,
-          right: variant === 'form' ? '42px' : `${height + 10}px`,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.15)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          borderRadius: '5px',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-        }}
-      />
-
-      {/* Left Arrow */}
-      {showArrows && showNavigationArrows && (
-        <div
-          style={{
-            height: variant === 'form' ? '32px' : `${height}px`,
-            width: variant === 'form' ? '32px' : `${height}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'absolute',
-            left: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 2,
-          }}
+      <div className={styles.navBackground} />
+      
+      <div className={`${styles.arrowContainer} ${styles.arrowContainerLeft}`}>
+        <button
+          className={`${styles.arrowButton} ${styles.arrowButtonLeft} ${!canScrollLeft ? styles.arrowButtonDisabled : ''}`}
+          onClick={() => scrollNav('left')}
+          disabled={!canScrollLeft}
         >
-          <ArrowButton
-            direction="left"
-            onClick={() => scrollNav('left')}
-            ariaLabel="Scroll left"
-            disabled={!canScrollLeft}
-          />
-        </div>
-      )}
+          ←
+        </button>
+      </div>
 
-      {/* Scrollable Content */}
-      <div
-        ref={navContainerRef}
-        style={{
-          height: '100%',
-          width: variant === 'form' ? 'calc(100% - 84px)' : `calc(100% - ${(height + 10) * 2}px)`,
-          display: 'flex',
-          alignItems: 'center',
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-          WebkitOverflowScrolling: 'touch',
-          justifyContent: showNavigationArrows ? 'flex-start' : 'center',
-          position: 'relative',
-          zIndex: 1,
-          scrollBehavior: 'smooth',
-          padding: variant === 'form' ? '0 10px' : '0',
-        }}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
-        role="tablist"
-      >
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            height: '100%',
-            gap: `${itemGap}px`,
-            padding: '0 5px',
-            flexWrap: 'nowrap',
-            width: 'max-content',
-          }}
-        >
+      <div className={styles.navContent} ref={navContainerRef}>
+        <div className={styles.navItems}>
           {items.map((item, index) => renderItem(item, index))}
         </div>
       </div>
 
-      {/* Right Arrow */}
-      {showArrows && showNavigationArrows && (
-        <div
-          style={{
-            height: variant === 'form' ? '32px' : `${height}px`,
-            width: variant === 'form' ? '32px' : `${height}px`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'absolute',
-            right: 0,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            zIndex: 2,
-          }}
+      <div className={`${styles.arrowContainer} ${styles.arrowContainerRight}`}>
+        <button
+          className={`${styles.arrowButton} ${styles.arrowButtonRight} ${!canScrollRight ? styles.arrowButtonDisabled : ''}`}
+          onClick={() => scrollNav('right')}
+          disabled={!canScrollRight}
         >
-          <ArrowButton
-            direction="right"
-            onClick={() => scrollNav('right')}
-            ariaLabel="Scroll right"
-            disabled={!canScrollRight}
-          />
-        </div>
-      )}
+          →
+        </button>
+      </div>
 
       {onToggleExpand && (
         <button
-          style={{
-            position: 'absolute',
-            right: '-40px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '32px',
-            height: '32px',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '4px',
-            color: 'white',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-          }}
+          className={styles.toggleButton}
           onClick={onToggleExpand}
-          aria-label={isExpanded ? 'Collapse navigation' : 'Expand navigation'}
-          aria-expanded={isExpanded}
         >
-          {isExpanded ? '←' : '→'}
+          {isExpanded ? '↑' : '↓'}
         </button>
       )}
     </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NodeViewProps } from '@tiptap/core';
-import '../styles/components/CodeBlockTemplate.css';
+import styles from '../styles/components/CodeBlockTemplate.module.css';
 
 const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -18,13 +18,13 @@ const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) 
   };
 
   return (
-    <div className="codeBlock">
-      <div className="codeBlockHeader">
-        <div className="codeBlockControls">
+    <div className={styles.codeBlock}>
+      <div className={styles.codeBlockHeader}>
+        <div className={styles.codeBlockControls}>
           <select
             value={(node.attrs as any).language || 'auto'}
             onChange={e => updateAttributes({ language: e.target.value })}
-            className="languageSelect"
+            className={styles.languageSelect}
           >
             <option value="auto">Auto Detect</option>
             <option value="javascript">JavaScript</option>
@@ -37,24 +37,24 @@ const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) 
             <option value="sql">SQL</option>
             {/* Add more language options as needed */}
           </select>
-          <div className="codeBlockActions">
+          <div className={styles.codeBlockActions}>
             <button 
               onClick={() => setIsEditing(!isEditing)}
-              className="actionButton"
+              className={styles.actionButton}
               title={isEditing ? "Save" : "Edit"}
             >
               ✏️
             </button>
             <button 
               onClick={handleCopy}
-              className="actionButton"
+              className={styles.actionButton}
               title="Copy"
             >
               📋
             </button>
             <button 
               onClick={handleDelete}
-              className="actionButton"
+              className={styles.actionButton}
               title="Delete"
             >
               🗑️
@@ -63,7 +63,7 @@ const CodeBlockTemplate: React.FC<NodeViewProps> = ({ node, updateAttributes }) 
         </div>
       </div>
       <pre 
-        className={`codeBlockContent ${isEditing ? 'codeBlockContentEditing' : ''}`}
+        className={`${styles.codeBlockContent} ${isEditing ? styles.codeBlockContentEditing : ''}`}
         contentEditable={isEditing}
         suppressContentEditableWarning
         spellCheck={false}
