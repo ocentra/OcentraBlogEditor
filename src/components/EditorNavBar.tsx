@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaArrowLeft, FaSave } from 'react-icons/fa';
+import '../styles/components/EditorNavBar.css';
 
 interface EditorNavBarProps {
   onBack: () => void;
@@ -8,61 +9,6 @@ interface EditorNavBarProps {
   onPublish?: () => void;
 }
 
-const styles = {
-  editorNav: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '12px 20px',
-    background: 'var(--surface-color)',
-    borderBottom: '1px solid var(--border-color)',
-    marginBottom: '20px',
-    borderRadius: '8px',
-    overflowX: 'auto' as const,
-    scrollbarWidth: 'none' as const,
-  },
-  navLeft: {
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'center',
-  },
-  navRight: {
-    display: 'flex',
-    gap: '12px',
-    alignItems: 'center',
-  },
-  navBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
-    borderRadius: '4px',
-    fontSize: '14px',
-    fontWeight: 500,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    background: 'transparent',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-color)',
-  },
-  navBtnBack: {
-    color: 'var(--text-color)',
-  },
-  navBtnSave: {
-    color: 'var(--editor-accent)',
-    borderColor: 'var(--editor-accent)',
-  },
-  navBtnPreview: {
-    background: 'transparent',
-    color: 'var(--text-color)',
-  },
-  navBtnPublish: {
-    background: 'var(--editor-accent)',
-    color: 'white',
-    borderColor: 'var(--editor-accent)',
-  },
-};
-
 const EditorNavBar: React.FC<EditorNavBarProps> = ({
   onBack,
   onSave,
@@ -70,34 +16,31 @@ const EditorNavBar: React.FC<EditorNavBarProps> = ({
   onPublish,
 }) => {
   return (
-    <div 
-      style={styles.editorNav}
-      className="editor-nav"
-    >
-      <div style={styles.navLeft}>
+    <div className="editorNav">
+      <div className="navLeft">
         <button 
           onClick={onBack} 
-          style={{ ...styles.navBtn, ...styles.navBtnBack }}
+          className="navBtn navBtnBack"
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--surface-hover-color)';
+            e.currentTarget.classList.add('hover');
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.classList.remove('hover');
           }}
         >
           <FaArrowLeft /> Back
         </button>
       </div>
-      <div style={styles.navRight}>
+      <div className="navRight">
         {onSave && (
           <button 
             onClick={onSave} 
-            style={{ ...styles.navBtn, ...styles.navBtnSave }}
+            className="navBtn navBtnSave"
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(74, 158, 255, 0.1)';
+              e.currentTarget.classList.add('hover');
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.classList.remove('hover');
             }}
           >
             <FaSave /> Save Draft
@@ -106,12 +49,12 @@ const EditorNavBar: React.FC<EditorNavBarProps> = ({
         {onPreview && (
           <button 
             onClick={onPreview} 
-            style={{ ...styles.navBtn, ...styles.navBtnPreview }}
+            className="navBtn navBtnPreview"
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--surface-hover-color)';
+              e.currentTarget.classList.add('hover');
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.classList.remove('hover');
             }}
           >
             Preview
@@ -120,12 +63,12 @@ const EditorNavBar: React.FC<EditorNavBarProps> = ({
         {onPublish && (
           <button 
             onClick={onPublish} 
-            style={{ ...styles.navBtn, ...styles.navBtnPublish }}
+            className="navBtn navBtnPublish"
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(74, 158, 255, 0.8)';
+              e.currentTarget.classList.add('hover');
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--editor-accent)';
+              e.currentTarget.classList.remove('hover');
             }}
           >
             Publish

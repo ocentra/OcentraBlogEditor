@@ -1,11 +1,12 @@
-import './styles/index.css';
-import './styles/BlogEditor.css';
+import './styles/base/index.css';
+import './styles/editor/BlogEditor.css';
 import React, { useState, useRef, useEffect } from 'react';
 import { BlogPost, BlogEditorProps } from './types/interfaces';
 import Section from './components/Section';
 import { EditorSidebar } from './components/EditorSidebar';
 import NavigationBar from './components/NavigationBar';
 import HeroImage from './components/HeroImage';
+import BlogPreview from './components/BlogPreview';
 import { useConfig } from './context/ConfigContext';
 
 export const BlogEditor: React.FC<BlogEditorProps> = ({
@@ -18,6 +19,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   previewBackground = '#ffffff'
 }) => {
   const { defaultHeroImage, categories = [] } = useConfig();
+  
   const [post, setPost] = useState<BlogPost>(initialPost || {
     id: crypto.randomUUID(),
     metadata: {
@@ -347,182 +349,107 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   ];
 
   return (
-    <div className="blog-editor" style={{ backgroundColor }}>
-      <div className="editor-container">
-        <NavigationBar
-          items={navigationItems}
-          height={40}
-          showArrows={true}
-          variant="form"
-          itemGap={4}
-          itemMargin={2}
-          itemPadding="4px 10px"
-          selectedCategory={post.metadata.category}
-          onCategoryChange={(category) => setPost(prev => ({
-            ...prev,
-            metadata: { ...prev.metadata, category }
-          }))}
+    <div className="blog-editor">
+      {isPreviewMode ? (
+        <BlogPreview 
+          post={{
+            ...post,
+            content: {
+              ...post.content,
+              featuredImage: heroImage.url ? {
+                url: heroImage.url,
+                alt: heroImage.alt,
+                position: heroImage.position
+              } : undefined
+            }
+          }}
+          backgroundColor={backgroundColor}
+          onClose={togglePreview}
+          containerClassName="blog-preview-fullscreen"
         />
-        <div className="editor-main">
-          <EditorSidebar
-            sections={post.content.sections}
-            activeSection={activeSection}
-            onSectionSelect={handleSectionSelect}
-            onSectionDelete={deleteSection}
-            onSectionAdd={(title) => {
-              const newSection = {
-                id: Math.random().toString(36).substr(2, 9),
-                type: 'text' as const,
-                content: '',
-                metadata: {
-                  title: title
-                }
-              };
-              setPost(prev => ({
-                ...prev,
-                content: {
-                  ...prev.content,
-                  sections: [...prev.content.sections, newSection]
-                }
-              }));
-              setActiveSection(newSection.id);
-            }}
-            onSectionReorder={handleSectionReorder}
-            isCollapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-            hasHeroImage={heroImage.url !== '' && heroImage.url !== defaultHeroImage}
-            onTitleChange={(sectionId, newTitle) => {
-              updateSectionMeta(sectionId, { title: newTitle });
-            }}
+      ) : (
+        <div className="editor-container">
+          <NavigationBar
+            items={navigationItems}
+            height={40}
+            showArrows={true}
+            variant="form"
+            itemGap={4}
+            itemMargin={2}
+            itemPadding="4px 10px"
+            selectedCategory={post.metadata.category}
+            onCategoryChange={(category) => setPost(prev => ({
+              ...prev,
+              metadata: { ...prev.metadata, category }
+            }))}
           />
+          <div className="editor-main">
+            <EditorSidebar
+              sections={post.content.sections}
+              activeSection={activeSection}
+              onSectionSelect={handleSectionSelect}
+              onSectionDelete={deleteSection}
+              onSectionAdd={(title) => {
+                const newSection = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  type: 'text' as const,
+                  content: '',
+                  metadata: {
+                    title: title
+                  }
+                };
+                setPost(prev => ({
+                  ...prev,
+                  content: {
+                    ...prev.content,
+                    sections: [...prev.content.sections, newSection]
+                  }
+                }));
+                setActiveSection(newSection.id);
+              }}
+              onSectionReorder={handleSectionReorder}
+              isCollapsed={sidebarCollapsed}
+              onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+              hasHeroImage={heroImage.url !== '' && heroImage.url !== defaultHeroImage}
+              onTitleChange={(sectionId, newTitle) => {
+                updateSectionMeta(sectionId, { title: newTitle });
+              }}
+            />
 
-          <div className="editor-content" ref={editorContentRef}>
-            {isPreviewMode ? (
-              <div className="preview-container">
-                <div className="preview-mode">
-                  <div className="preview-header">
-                    <button 
-                      className="preview-close-button"
-                      onClick={togglePreview}
-                      aria-label="Exit preview"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <article className="blog-preview">
-                    <meta property="og:title" content={post.metadata?.title || 'Untitled'} />
-                    <meta property="og:description" content={post.content.sections[0]?.content || ''} />
-                    {heroImage.url && (
-                      <meta property="og:image" content={heroImage.url} />
-                    )}
-                    <meta property="og:type" content="article" />
-                    <meta property="og:url" content={window.location.href} />
-                    
-                    <div className="hero-image-container">
-                      {heroImage.url ? (
-                        <div className="hero-image-wrapper">
-                          <img 
-                            src={heroImage.url} 
-                            alt={heroImage.alt} 
-                            className="hero-image"
-                            style={{
-                              objectPosition: `${heroImage.position?.x || 50}% ${heroImage.position?.y || 50}%`
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="hero-image-placeholder" />
-                      )}
-                    </div>
-
-                    <div className="blog-preview-header">
-                      <h1 className="blog-preview-title">{post.metadata?.title || 'Untitled'}</h1>
-                      <div className="blog-preview-meta">
-                        <span className="blog-preview-category">{post.metadata?.category || 'Uncategorized'}</span>
-                        <span className="separator">|</span>
-                        <span className="blog-preview-author">{post.metadata?.author || 'Anonymous'}</span>
-                        <span className="separator">|</span>
-                        <span className="blog-preview-read-time">{post.metadata?.readTime || '5 min read'}</span>
-                        <span className="separator">|</span>
-                        <span className="blog-preview-date">{new Date(post.metadata?.date || new Date()).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-
-                    <div className="blog-preview-content">
-                      {post.content.sections.map(section => (
-                        <div key={section.id} className="preview-section">
-                          {section.type === 'text' && (
-                            <div 
-                              className="preview-text-content"
-                              dangerouslySetInnerHTML={{ __html: section.content }} 
-                            />
-                          )}
-                          {section.type === 'code' && (
-                            <pre className="preview-code-block">
-                              <code>{section.content}</code>
-                            </pre>
-                          )}
-                          {section.type === 'quote' && (
-                            <blockquote className="preview-quote">
-                              {section.content}
-                            </blockquote>
-                          )}
-                          {section.type === 'image' && section.metadata?.image && (
-                            <figure className="preview-image-container">
-                              <img 
-                                src={section.metadata.image.url} 
-                                alt={section.metadata.image.alt} 
-                                className="preview-image"
-                              />
-                              {section.metadata.image.caption && (
-                                <figcaption className="preview-image-caption">
-                                  {section.metadata.image.caption}
-                                </figcaption>
-                              )}
-                            </figure>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </article>
-                </div>
+            <div className="editor-content" ref={editorContentRef} style={{ backgroundColor }}>
+              <div ref={el => sectionRefs.current['hero'] = el}>
+                <HeroImage
+                  imageUrl={heroImage.url}
+                  alt={heroImage.alt}
+                  position={heroImage.position}
+                  onImageChange={handleHeroImageChange}
+                  onAltChange={handleHeroImageAltChange}
+                  isActive={activeSection === 'hero'}
+                  onSelect={() => handleSectionSelect('hero')}
+                />
               </div>
-            ) : (
-              <>
-                <div ref={el => sectionRefs.current['hero'] = el}>
-                  <HeroImage
-                    imageUrl={heroImage.url}
-                    alt={heroImage.alt}
-                    position={heroImage.position}
-                    onImageChange={handleHeroImageChange}
-                    onAltChange={handleHeroImageAltChange}
-                    isActive={activeSection === 'hero'}
-                    onSelect={() => handleSectionSelect('hero')}
+              {post.content.sections.map((section) => (
+                <div
+                  key={section.id}
+                  ref={el => sectionRefs.current[section.id] = el}
+                >
+                  <Section
+                    type={section.type}
+                    content={section.content}
+                    metadata={section.metadata}
+                    isActive={activeSection === section.id}
+                    onSelect={() => handleSectionSelect(section.id)}
+                    onDelete={() => deleteSection(section.id)}
+                    onUpdate={(content) => updateSection(section.id, content)}
+                    onTypeChange={(type) => updateSectionMeta(section.id, { language: type })}
+                    onTitleChange={(title) => updateSectionMeta(section.id, { title })}
                   />
                 </div>
-                {post.content.sections.map((section) => (
-                  <div
-                    key={section.id}
-                    ref={el => sectionRefs.current[section.id] = el}
-                  >
-                    <Section
-                      type={section.type}
-                      content={section.content}
-                      metadata={section.metadata}
-                      isActive={activeSection === section.id}
-                      onSelect={() => handleSectionSelect(section.id)}
-                      onDelete={() => deleteSection(section.id)}
-                      onUpdate={(content) => updateSection(section.id, content)}
-                      onTypeChange={(type) => updateSectionMeta(section.id, { language: type })}
-                      onTitleChange={(title) => updateSectionMeta(section.id, { title })}
-                    />
-                  </div>
-                ))}
-              </>
-            )}
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }; 
