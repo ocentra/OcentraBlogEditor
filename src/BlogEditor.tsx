@@ -10,6 +10,9 @@ import BlogPreview from './components/BlogPreview';
 import { AppMenuBar } from './components/AppMenuBar';
 import { useConfig } from './context/ConfigContext';
 import FileManager from './services/FileManager';
+import { Logger } from './utils/logger';
+
+const logger = Logger.getInstance('[BlogEditor]');
 
 export const BlogEditor: React.FC<BlogEditorProps> = ({
   initialPost,
@@ -21,21 +24,108 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   const { defaultHeroImage, categories = [] } = useConfig();
   const fileManager = FileManager.getInstance();
   
-  const [post, setPost] = useState<BlogPost>(initialPost || {
-    id: crypto.randomUUID(),
-    metadata: {
-      title: '',
-      author: '',
-      date: new Date().toISOString(),
-      category: '',
-      readTime: '',
-      featured: false,
-      status: 'draft'
-    },
-    content: {
-      sections: []
+  // Determine the source of the initial post
+  const [postSource, setPostSource] = useState<'disk' | 'indexedDB' | 'default' | 'example'>('default');
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [post, setPost] = useState<BlogPost | null>(null);
+  
+  const updatePost = (updates: Partial<BlogPost>) => {
+    setPost(prev => {
+      if (!prev) return null;
+      const updatedMetadata = {
+        title: prev.metadata.title,
+        author: prev.metadata.author,
+        category: prev.metadata.category,
+        readTime: prev.metadata.readTime,
+        featured: prev.metadata.featured,
+        status: prev.metadata.status,
+        date: prev.metadata.date,
+        ...(updates.metadata || {})
+      };
+      const updatedContent = {
+        sections: updates.content?.sections || prev.content.sections,
+        featuredImage: updates.content?.featuredImage || prev.content.featuredImage,
+        backgroundColor: updates.content?.backgroundColor || prev.content.backgroundColor
+      };
+      const updatedPost: BlogPost = {
+        id: prev.id,
+        metadata: updatedMetadata,
+        content: updatedContent
+      };
+      return updatedPost;
+    });
+  };
+
+  // Initialize only once
+  useEffect(() => {
+    if (!isInitialized && !post) {
+      const loadPost = async () => {
+        try {
+          // First try initialPost from example app
+          if (initialPost) {
+            logger.info('Loading example post from props:', {
+              title: initialPost.metadata?.title,
+              sectionCount: initialPost.content?.sections?.length,
+              source: 'example'
+            });
+            setPostSource('example');
+            setPost(initialPost);
+          } else {
+            // Then try IndexedDB auto-save
+            try {
+              const autoSavedPost = await fileManager.getAutoSave();
+              if (autoSavedPost) {
+                logger.info('Loading auto-saved post from IndexedDB:', {
+                  title: autoSavedPost.metadata?.title,
+                  sectionCount: autoSavedPost.content?.sections?.length,
+                  source: 'indexedDB'
+                });
+                setPostSource('indexedDB');
+                setPost(autoSavedPost);
+              } else {
+                // If all else fails, create a new post
+                logger.info('No existing post found, creating new post');
+                createNewPost();
+              }
+            } catch (error) {
+              logger.error('Error loading from IndexedDB:', error);
+              logger.info('Creating new post after IndexedDB error');
+              createNewPost();
+            }
+          }
+        } catch (error) {
+          logger.error('Error during initialization:', error);
+          logger.info('Creating new post after initialization error');
+          createNewPost();
+        }
+        setIsInitialized(true);
+      };
+
+      loadPost();
     }
-  });
+  }, [initialPost, isInitialized, post]);
+
+  const createNewPost = () => {
+    logger.info('BlogEditor: Creating new empty post');
+    setPostSource('default');
+    const newPost: BlogPost = {
+      id: crypto.randomUUID(),
+      metadata: {
+        title: '',
+        author: '',
+        date: new Date().toISOString(),
+        category: '',
+        readTime: '',
+        featured: false,
+        status: 'draft'
+      },
+      content: {
+        sections: []
+      }
+    };
+    setPost(newPost);
+  };
+
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -58,30 +148,16 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   const autoSaveTimerRef = useRef<NodeJS.Timeout>();
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  useEffect(() => {
-    // Load saved draft on mount
-    const savedDraft = localStorage.getItem('blogDraft');
-    if (savedDraft && !initialPost) {
-      try {
-        const draft = JSON.parse(savedDraft);
-        setPost(draft);
-        setBackgroundColor(draft.content.backgroundColor || '#333333');
-        setHeroImage({
-          url: draft.content.featuredImage?.url || '',
-          alt: draft.content.featuredImage?.alt || 'Blog hero image',
-          position: draft.content.featuredImage?.position || { x: 50, y: 50 }
-        });
-      } catch (error) {
-        console.error('Failed to load draft:', error);
-      }
-    }
-  }, [initialPost]);
+  // Add a function to get the current post source
+  const getPostSource = () => postSource;
 
   // Auto-save every 30 seconds if there are changes
   useEffect(() => {
-    const autoSave = () => {
+    const autoSave = async () => {
+      if (!post) return;
+      
       const currentPost: BlogPost = {
-        ...post,
+        id: post.id,
         content: {
           ...post.content,
           featuredImage: heroImage.url ? {
@@ -97,15 +173,32 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
         }
       };
 
-      // Save to localStorage for quick recovery
-      localStorage.setItem('blogDraft', JSON.stringify(currentPost));
-      
-      // Call onSave to update the JSON file
-      if (onSave) {
-        onSave(currentPost);
+      // Check if there are actual changes
+      const lastSavedPost = await fileManager.getAutoSave();
+      if (lastSavedPost && JSON.stringify(lastSavedPost) === JSON.stringify(currentPost)) {
+        logger.debug('No changes detected, skipping auto-save');
+        return;
       }
-      
-      console.log('Auto-saved at:', new Date().toLocaleTimeString());
+
+      try {
+        await fileManager.saveToIndexedDB(currentPost);
+        logger.info(`Auto-saved "${currentPost.metadata.title}" to IndexedDB`);
+        
+        // After successful save, try to load from IndexedDB
+        const autoSavedPost = await fileManager.getAutoSave();
+        if (autoSavedPost) {
+          logger.info('Switching to auto-saved version from IndexedDB');
+          setPost(autoSavedPost);
+          setPostSource('indexedDB');
+        }
+        
+        localStorage.setItem('blogDraft', JSON.stringify(currentPost));
+        if (onSave) {
+          onSave(currentPost);
+        }
+      } catch (error) {
+        logger.error('Error during auto-save:', error);
+      }
     };
 
     autoSaveTimerRef.current = setInterval(autoSave, 30000);
@@ -117,44 +210,83 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   }, [post, heroImage, backgroundColor, onSave]);
 
   const updateSection = (id: string, content: string) => {
-    setPost(prev => ({
-      ...prev,
-      content: {
-        ...prev.content,
-        sections: prev.content.sections.map(section => 
-          section.id === id ? { ...section, content } : section
-        )
-      }
-    }));
+    if (!post) return;
+    
+    setPost(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        content: {
+          ...prev.content,
+          sections: prev.content.sections.map(section => 
+            section.id === id ? { ...section, content } : section
+          )
+        }
+      };
+    });
   };
 
   const updateSectionMeta = (id: string, metadata: Partial<BlogPost['content']['sections'][0]['metadata']>) => {
-    setPost(prev => ({
-      ...prev,
-      content: {
-        ...prev.content,
-        sections: prev.content.sections.map(section => 
-          section.id === id ? { ...section, metadata: { ...section.metadata, ...metadata } } : section
-        )
-      }
-    }));
+    if (!post) return;
+    
+    setPost(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        content: {
+          ...prev.content,
+          sections: prev.content.sections.map(section => 
+            section.id === id ? { ...section, metadata: { ...section.metadata, ...metadata } } : section
+          )
+        }
+      };
+    });
   };
 
   const deleteSection = (id: string) => {
-    setPost(prev => ({
-      ...prev,
-      content: {
-        ...prev.content,
-        sections: prev.content.sections.filter(section => section.id !== id)
-      }
-    }));
+    if (!post) return;
+    
+    setPost(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        content: {
+          ...prev.content,
+          sections: prev.content.sections.filter(section => section.id !== id)
+        }
+      };
+    });
     if (activeSection === id) {
       setActiveSection(null);
     }
   };
 
   const handleHeroImageChange = (url: string, alt: string, position?: {x: number, y: number}) => {
-    setHeroImage({ url, alt, position: position || { x: 50, y: 50 } });
+    // If the URL is a base64 string, ensure it's properly formatted
+    if (url.startsWith('data:')) {
+      setHeroImage({ url, alt, position: position || { x: 50, y: 50 } });
+    } else {
+      // For non-base64 URLs, try to download and convert to base64
+      fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = reader.result as string;
+            setHeroImage({ 
+              url: base64, 
+              alt, 
+              position: position || { x: 50, y: 50 } 
+            });
+          };
+          reader.readAsDataURL(blob);
+        })
+        .catch(error => {
+          logger.error('Error converting image to base64:', error);
+          // If conversion fails, keep the original URL
+          setHeroImage({ url, alt, position: position || { x: 50, y: 50 } });
+        });
+    }
   };
 
   const handleHeroImageAltChange = (alt: string) => {
@@ -162,16 +294,18 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   const saveDraft = () => {
+    if (!post) return;
+    
     const currentPost: BlogPost = {
-      id: post.id || crypto.randomUUID(),
+      id: post.id,
       metadata: {
-        title: post.metadata?.title || 'Untitled',
-        author: post.metadata?.author || 'Anonymous',
-        category: post.metadata?.category || 'Uncategorized',
-        readTime: post.metadata?.readTime || '5 min',
-        featured: post.metadata?.featured || false,
+        title: post.metadata.title || 'Untitled',
+        author: post.metadata.author || 'Anonymous',
+        category: post.metadata.category || 'Uncategorized',
+        readTime: post.metadata.readTime || '5 min',
+        featured: post.metadata.featured || false,
         status: 'draft',
-        date: post.metadata?.date || new Date().toISOString(),
+        date: post.metadata.date || new Date().toISOString(),
       },
       content: {
         sections: post.content.sections,
@@ -188,14 +322,16 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   const publish = () => {
+    if (!post) return;
+    
     const publishedPost: BlogPost = {
-      id: post.id || crypto.randomUUID(),
+      id: post.id,
       metadata: {
-        title: post.metadata?.title || 'Untitled',
-        author: post.metadata?.author || 'Anonymous',
-        category: post.metadata?.category || 'Uncategorized',
-        readTime: post.metadata?.readTime || '5 min',
-        featured: post.metadata?.featured || false,
+        title: post.metadata.title || 'Untitled',
+        author: post.metadata.author || 'Anonymous',
+        category: post.metadata.category || 'Uncategorized',
+        readTime: post.metadata.readTime || '5 min',
+        featured: post.metadata.featured || false,
         status: 'published',
         date: new Date().toISOString(),
       },
@@ -213,11 +349,15 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   const togglePreview = () => {
+    logger.info(`Toggling preview mode: ${!isPreviewMode ? 'on' : 'off'}`);
     setIsPreviewMode(prev => !prev);
   };
 
   const handleSectionReorder = (fromIndex: number, toIndex: number) => {
+    if (!post) return;
+    
     setPost(prev => {
+      if (!prev) return null;
       const newSections = [...prev.content.sections];
       const [movedSection] = newSections.splice(fromIndex, 1);
       newSections.splice(toIndex, 0, movedSection);
@@ -265,6 +405,7 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   const handleNewBlog = () => {
+    logger.info('Creating new blog post');
     setPost({
       id: crypto.randomUUID(),
       metadata: {
@@ -286,45 +427,89 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
       position: { x: 50, y: 50 }
     });
     setBackgroundColor('#333333');
+    logger.info('New blog post created');
   };
 
   const handleOpenBlog = async (openedPost?: BlogPost) => {
     try {
-      const post = openedPost || await fileManager.openBlog();
-      setPost(post);
-      setHeroImage({
-        url: post.content.featuredImage?.url || '',
-        alt: post.content.featuredImage?.alt || '',
-        position: post.content.featuredImage?.position || { x: 50, y: 50 }
+      const newPost = openedPost || await fileManager.openBlog();
+      if (!newPost || !newPost.id) {
+        logger.error('BlogEditor: No valid post loaded from disk');
+        return;
+      }
+      
+      logger.info('BlogEditor: Loading new post from disk:', {
+        title: newPost.metadata?.title,
+        sectionCount: newPost.content?.sections?.length
       });
-      setBackgroundColor(post.content.backgroundColor || '#333333');
+      setPostSource('disk');
+      setPost(newPost);
+      setHeroImage({
+        url: newPost.content.featuredImage?.url || '',
+        alt: newPost.content.featuredImage?.alt || '',
+        position: newPost.content.featuredImage?.position || { x: 50, y: 50 }
+      });
+      setBackgroundColor(newPost.content.backgroundColor || '#333333');
     } catch (error) {
-      console.error('Error opening blog:', error);
+      logger.error('BlogEditor: Error loading post from disk:', error);
     }
   };
 
   const handleSaveBlog = async () => {
+    if (!post) return;
+    
     try {
-      await fileManager.saveBlog(post);
-      saveDraft(); // Also save to localStorage
+      logger.info('Saving blog post...');
+      const currentPost: BlogPost = {
+        id: post.id,
+        metadata: {
+          title: post.metadata.title || 'Untitled',
+          author: post.metadata.author || 'Anonymous',
+          category: post.metadata.category || 'Uncategorized',
+          readTime: post.metadata.readTime || '5 min',
+          featured: post.metadata.featured || false,
+          status: 'draft',
+          date: post.metadata.date || new Date().toISOString(),
+        },
+        content: {
+          sections: post.content.sections,
+          featuredImage: heroImage.url ? {
+            url: heroImage.url,
+            alt: heroImage.alt,
+            position: heroImage.position
+          } : undefined,
+          backgroundColor: backgroundColor
+        }
+      };
+      await fileManager.saveBlog(currentPost);
+      saveDraft();
+      logger.info('Blog post saved successfully');
     } catch (error) {
-      console.error('Error saving blog:', error);
+      logger.error('Error saving blog:', error);
     }
   };
 
   const handleSaveAsBlog = async () => {
+    if (!post) return;
+    
     try {
+      logger.info('Saving blog post as new file...');
       await fileManager.saveBlogAs(post);
+      logger.info('Blog post saved as new file successfully');
     } catch (error) {
-      console.error('Error saving blog:', error);
+      logger.error('Error saving blog as new file:', error);
     }
   };
 
   const handleExportBlog = async () => {
+    if (!post) return;
+    
     try {
+      logger.info('Exporting blog post...');
       await fileManager.exportBlog(post);
+      logger.info('Blog post exported successfully');
     } catch (error) {
-      console.error('Error exporting blog:', error);
+      logger.error('Error exporting blog:', error);
     }
   };
 
@@ -337,52 +522,85 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
   };
 
   const handleToggleTheme = () => {
+    logger.info(`Toggling theme: ${!isDarkTheme ? 'dark' : 'light'}`);
     setIsDarkTheme(!isDarkTheme);
-    // TODO: Implement theme toggle functionality
   };
+
+  // Don't render until post is loaded
+  if (!post) {
+    return null;
+  }
 
   const navigationItems = [
     {
       name: 'Title',
       type: 'input' as const,
-      value: post.metadata?.title || '',
-      onChange: (value: string) => setPost(prev => ({
-        ...prev,
-        metadata: { ...prev.metadata, title: value }
-      })),
+      value: post.metadata.title,
+      onChange: (value: string) => updatePost({
+        metadata: {
+          title: value,
+          author: post.metadata.author,
+          category: post.metadata.category,
+          readTime: post.metadata.readTime,
+          featured: post.metadata.featured,
+          status: post.metadata.status,
+          date: post.metadata.date
+        }
+      }),
       placeholder: 'Enter title...',
       minWidth: '200px',
     },
     {
       name: 'Author',
       type: 'input' as const,
-      value: post.metadata?.author || '',
-      onChange: (value: string) => setPost(prev => ({
-        ...prev,
-        metadata: { ...prev.metadata, author: value }
-      })),
+      value: post.metadata.author,
+      onChange: (value: string) => updatePost({
+        metadata: {
+          title: post.metadata.title,
+          author: value,
+          category: post.metadata.category,
+          readTime: post.metadata.readTime,
+          featured: post.metadata.featured,
+          status: post.metadata.status,
+          date: post.metadata.date
+        }
+      }),
       placeholder: 'Author name...',
       minWidth: '150px',
     },
     {
       name: 'Read Time',
       type: 'input' as const,
-      value: post.metadata?.readTime || '',
-      onChange: (value: string) => setPost(prev => ({
-        ...prev,
-        metadata: { ...prev.metadata, readTime: value }
-      })),
+      value: post.metadata.readTime,
+      onChange: (value: string) => updatePost({
+        metadata: {
+          title: post.metadata.title,
+          author: post.metadata.author,
+          category: post.metadata.category,
+          readTime: value,
+          featured: post.metadata.featured,
+          status: post.metadata.status,
+          date: post.metadata.date
+        }
+      }),
       placeholder: 'Read time...',
       minWidth: '100px',
     },
     {
       name: 'Featured',
       type: 'checkbox' as const,
-      value: post.metadata?.featured ? 'true' : 'false',
-      onChange: (value: string) => setPost(prev => ({
-        ...prev,
-        metadata: { ...prev.metadata, featured: value === 'true' }
-      })),
+      value: post.metadata.featured ? 'true' : 'false',
+      onChange: (value: string) => updatePost({
+        metadata: {
+          title: post.metadata.title,
+          author: post.metadata.author,
+          category: post.metadata.category,
+          readTime: post.metadata.readTime,
+          featured: value === 'true',
+          status: post.metadata.status,
+          date: post.metadata.date
+        }
+      }),
     },
     {
       name: 'Background',
@@ -463,10 +681,13 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
             itemMargin={2}
             itemPadding="4px 10px"
             selectedCategory={post.metadata.category}
-            onCategoryChange={(category) => setPost(prev => ({
-              ...prev,
-              metadata: { ...prev.metadata, category }
-            }))}
+            onCategoryChange={(category) => setPost(prev => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                metadata: { ...prev.metadata, category }
+              };
+            })}
           />
           <div className={styles.editorMain}>
             <EditorSidebar
@@ -483,13 +704,16 @@ export const BlogEditor: React.FC<BlogEditorProps> = ({
                     title: title
                   }
                 };
-                setPost(prev => ({
-                  ...prev,
-                  content: {
-                    ...prev.content,
-                    sections: [...prev.content.sections, newSection]
-                  }
-                }));
+                setPost(prev => {
+                  if (!prev) return null;
+                  return {
+                    ...prev,
+                    content: {
+                      ...prev.content,
+                      sections: [...prev.content.sections, newSection]
+                    }
+                  };
+                });
                 setActiveSection(newSection.id);
               }}
               onSectionReorder={handleSectionReorder}
