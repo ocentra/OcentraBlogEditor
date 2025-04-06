@@ -1,6 +1,8 @@
 import { StorageAdapter, BlogPostSummary } from './StorageAdapter';
 import { BlogPost } from '../types/interfaces';
 import { validateAndConvertBlogPost, validateBlogPost, ValidationError } from '../utils/typeValidator';
+import { Logger } from '../utils/logger';
+import { GlobalLogger } from '../utils/globalLogger';
 
 interface GitHubConfig {
   owner: string;
@@ -15,6 +17,7 @@ export class GitHubStorageAdapter implements StorageAdapter {
   private readonly config: Required<GitHubConfig>;
   private readonly apiUrl: string;
   private readonly rawContentUrl: string;
+  private readonly logger = Logger.getInstance('[GitHubStorageAdapter]');
 
   constructor(config: GitHubConfig) {
     if (!config.token) {
@@ -28,6 +31,15 @@ export class GitHubStorageAdapter implements StorageAdapter {
     };
     this.apiUrl = `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/contents`;
     this.rawContentUrl = `https://raw.githubusercontent.com/${this.config.owner}/${this.config.repo}/${this.config.branch}`;
+    // Register with global logger
+    GlobalLogger.enableComponent('[GitHubStorageAdapter]');
+    this.logger.info('Initialized with config:', {
+      owner: this.config.owner,
+      repo: this.config.repo,
+      branch: this.config.branch,
+      basePath: this.config.basePath,
+      imageBasePath: this.config.imageBasePath
+    });
   }
 
   private getHeaders(): HeadersInit {
@@ -65,7 +77,7 @@ export class GitHubStorageAdapter implements StorageAdapter {
         sha: data.sha
       };
     } catch (error) {
-      console.error(`Error getting file content for ${path}:`, error);
+      this.logger.error(`Error getting file content for ${path}:`, error);
       return null;
     }
   }
@@ -105,6 +117,7 @@ export class GitHubStorageAdapter implements StorageAdapter {
   }
 
   async save(post: BlogPost): Promise<string> {
+    this.logger.info('Saving post to GitHub:', post.id);
     const postId = post.id || crypto.randomUUID();
     const postToSave = { ...post, id: postId, $type: 'BlogPost' };
     const filePath = this.getFilePath(postId);
@@ -119,37 +132,47 @@ export class GitHubStorageAdapter implements StorageAdapter {
         JSON.stringify(postToSave, null, 2),
         commitMessage
       );
+      this.logger.info('Successfully saved post:', postId);
       return postId;
     } catch (error) {
       if (error instanceof ValidationError) {
-        console.error('Validation error saving post:', error.message);
+        this.logger.error('Validation error saving post:', error.message);
       } else {
-        console.error('Error saving post:', error);
+        this.logger.error('Error saving post:', error);
       }
+      this.logger.error('Failed to save post:', error);
       throw error;
     }
   }
 
   async load(id: string): Promise<BlogPost | null> {
+    this.logger.info('Loading post from GitHub:', id);
     const filePath = this.getFilePath(id);
     const fileData = await this.getFileContent(filePath);
 
-    if (!fileData) return null;
+    if (!fileData) {
+      this.logger.debug('Post not found:', id);
+      return null;
+    }
 
     try {
       const decodedContent = decodeURIComponent(escape(atob(fileData.content)));
-      return validateAndConvertBlogPost(decodedContent);
+      const post = validateAndConvertBlogPost(decodedContent);
+      this.logger.info('Successfully loaded post:', id);
+      return post;
     } catch (error) {
       if (error instanceof ValidationError) {
-        console.error(`Validation error loading post ${id}:`, error.message);
+        this.logger.error(`Validation error loading post ${id}:`, error.message);
       } else {
-        console.error(`Error parsing post ${id}:`, error);
+        this.logger.error(`Error parsing post ${id}:`, error);
       }
+      this.logger.error('Failed to load post:', error);
       return null;
     }
   }
 
   async list(): Promise<BlogPostSummary[]> {
+    this.logger.info('Listing all posts from GitHub');
     try {
       const response = await fetch(`${this.apiUrl}/${this.config.basePath}?ref=${this.config.branch}`, {
         headers: this.getHeaders(),
@@ -182,19 +205,22 @@ export class GitHubStorageAdapter implements StorageAdapter {
           })
       );
 
+      this.logger.info('Found posts:', summaries.length);
       return summaries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     } catch (error) {
-      console.error("Error listing posts:", error);
-      return [];
+      this.logger.error("Error listing posts:", error);
+      this.logger.error('Failed to list posts:', error);
+      throw error;
     }
   }
 
   async delete(id: string): Promise<void> {
+    this.logger.info('Deleting post from GitHub:', id);
     const filePath = this.getFilePath(id);
     const fileData = await this.getFileContent(filePath);
 
     if (!fileData) {
-      console.warn(`Post ${id} not found for deletion.`);
+      this.logger.warn(`Post ${id} not found for deletion.`);
       return;
     }
 
@@ -212,9 +238,11 @@ export class GitHubStorageAdapter implements StorageAdapter {
       const errorData = await response.json();
       throw new Error(`Failed to delete post: ${response.statusText} - ${errorData.message}`);
     }
+    this.logger.info('Successfully deleted post:', id);
   }
 
   async uploadImage(file: File): Promise<string> {
+    this.logger.info('Uploading image to GitHub:', file.name);
     const imagePath = this.getImagePath(file.name);
     
     try {
@@ -229,14 +257,17 @@ export class GitHubStorageAdapter implements StorageAdapter {
         `docs: Upload image ${file.name}`
       );
 
+      this.logger.info('Successfully uploaded image:', file.name);
       return url;
     } catch (error: any) {
-      console.error('Error uploading image:', error);
+      this.logger.error('Error uploading image:', error);
+      this.logger.error('Failed to upload image:', error);
       throw new Error(`Failed to upload image: ${error?.message || 'Unknown error'}`);
     }
   }
 
   async deleteImage(url: string): Promise<void> {
+    this.logger.info('Deleting image from GitHub:', url);
     // Extract the path from the raw GitHub URL
     const urlPath = url.split(`${this.rawContentUrl}/`)[1];
     if (!urlPath) {
@@ -245,7 +276,7 @@ export class GitHubStorageAdapter implements StorageAdapter {
 
     const fileData = await this.getFileContent(urlPath);
     if (!fileData) {
-      console.warn('Image not found for deletion.');
+      this.logger.warn('Image not found for deletion.');
       return;
     }
 
@@ -263,5 +294,6 @@ export class GitHubStorageAdapter implements StorageAdapter {
       const errorData = await response.json();
       throw new Error(`Failed to delete image: ${response.statusText} - ${errorData.message}`);
     }
+    this.logger.info('Successfully deleted image:', url);
   }
 }

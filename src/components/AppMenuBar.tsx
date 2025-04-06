@@ -3,6 +3,7 @@ import styles from '../styles/components/AppMenuBar.module.css';
 import RecentFiles from './RecentFiles';
 import FileManager, { RecentFile } from '../services/FileManager';
 import { BlogPost } from '../types/interfaces';
+import { logger } from '../utils/logger';
 
 interface AppMenuBarProps {
   onNewBlog: () => void;
@@ -48,6 +49,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
   }, []);
 
   const handleMenuClick = (menu: string) => {
+    logger.info(`Menu ${menu} ${activeMenu === menu ? 'closed' : 'opened'}`);
     if (menu === 'file') {
       setRecentFiles(fileManager.getRecentFiles());
     }
@@ -55,6 +57,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
   };
 
   const handleMenuBlur = () => {
+    logger.debug('Menu blur triggered');
     setTimeout(() => {
       setActiveMenu(null);
     }, 200);
@@ -62,25 +65,30 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
 
   const handleOpenBlog = async () => {
     try {
+      logger.info('Opening blog file...');
       const post = await fileManager.openBlog();
-      onOpenBlog(post);  // Pass the opened post to the parent
+      onOpenBlog(post);
       setActiveMenu(null);
+      logger.info('Blog file opened successfully');
     } catch (error) {
-      console.error('Error opening blog:', error);
+      logger.error('Error opening blog:', error);
     }
   };
 
   const handleRecentFileSelect = async (file: RecentFile) => {
     try {
+      logger.info(`Opening recent file: ${file.path}`);
       const post = await fileManager.openRecentFile(file);
       onOpenBlog(post);
       setActiveMenu(null);
+      logger.info('Recent file opened successfully');
     } catch (error) {
-      console.error('Error opening recent file:', error);
+      logger.error('Error opening recent file:', error);
     }
   };
 
   const handleClearRecent = () => {
+    logger.info('Clearing recent files list');
     fileManager.clearRecentFiles();
     setRecentFiles([]);
     setActiveMenu(null);

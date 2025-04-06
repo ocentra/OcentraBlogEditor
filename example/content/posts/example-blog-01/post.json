@@ -43,29 +43,7 @@
         "metadata": {
           "author": "Peter Drucker"
         }
-      },
-      {
-        "$type": "Section",
-        "id": "section-4",
-        "type": "image",
-        "content": "https://example.com/images/blog-editor-screenshot.png",
-        "metadata": {
-          "title": "Blog Editor Interface",
-          "image": {
-            "url": "https://example.com/images/blog-editor-screenshot.png",
-            "alt": "Screenshot of the blog editor interface"
-          }
-        }
       }
-    ],
-    "featuredImage": {
-      "$type": "HeroImage",
-      "url": "https://example.com/images/featured-blog-editor.jpg",
-      "alt": "Blog Editor in Action",
-      "position": {
-        "x": 0.5,
-        "y": 0.5
-      }
-    }
+    ]
   }
 } 
